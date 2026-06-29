@@ -26,8 +26,6 @@ def set_default_site_settings(sender, **kwargs):
     """
     from core import models
 
-    # Removed `NAP_START_MIN` and `NAP_START_MAX` values are referenced here
-    # for pre-2.0.0 migrations.
     try:
         nap_start_min = datetime.datetime.strptime(
             os.environ.get("NAP_START_MIN"), "%H:%M"
@@ -59,3 +57,5 @@ class BabyBuddyConfig(AppConfig):
     def ready(self):
         post_migrate.connect(create_read_only_group, sender=self)
         post_migrate.connect(set_default_site_settings, sender=self)
+
+        import babybuddy.feeding_reminder

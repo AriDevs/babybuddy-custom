@@ -4,10 +4,12 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path, reverse_lazy
+from babybuddy.last_feeding_views import last_feeding_page
 
 from . import views
 
 app_patterns = [
+    path("last-feeding/", last_feeding_page, name="last_feeding_page"),
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path(

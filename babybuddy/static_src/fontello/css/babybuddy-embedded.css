@@ -101,5 +101,6 @@
 .icon-weight:before { content: '\f24e'; } /* '' */
 .icon-today:before { content: '\f274'; } /* '' */
 .icon-bmi:before { content: '\f295'; } /* '' */
+.icon-medicine:before { content: '\f2c8'; } /* same glyph as temperature */
 .icon-temperature:before { content: '\f2c8'; } /* '' */
 .icon-pumping:before { content: '\f4a7'; } /* '' */

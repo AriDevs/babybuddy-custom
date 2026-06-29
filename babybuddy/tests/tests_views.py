@@ -11,6 +11,7 @@ from django.core.management import call_command
 from faker import Faker
 
 from babybuddy.views import UserUnlock
+from core import models
 
 
 class ViewsTestCase(TestCase):
@@ -31,7 +32,7 @@ class ViewsTestCase(TestCase):
             is_superuser=True, email="admin@admin.admin", **cls.credentials
         )
 
-        cls.c.login(**cls.credentials)
+        cls.c.force_login(cls.user)
 
     def test_root_router(self):
         page = self.c.get("/")
@@ -130,3 +131,67 @@ class ViewsTestCase(TestCase):
         }
         page = self.c.post(page.request["PATH_INFO"], data=data, follow=True)
         self.assertEqual(page.status_code, 200)
+
+
+class LastFeedingPageTestCase(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(LastFeedingPageTestCase, cls).setUpClass()
+        fake = Faker()
+        cls.c = HttpClient()
+
+        fake_user = fake.simple_profile()
+        cls.credentials = {
+            "username": fake_user["username"],
+            "password": fake.password(),
+        }
+        cls.user = get_user_model().objects.create_user(
+            is_superuser=True, email="admin@admin.admin", **cls.credentials
+        )
+        cls.child = models.Child.objects.create(
+            first_name="Spaghetti",
+            last_name="Baby",
+            birth_date="2024-01-01",
+        )
+        cls.c.force_login(cls.user)
+
+    def test_last_feeding_page_adds_bottle_feeding(self):
+        response = self.c.post(
+            "/last-feeding/",
+            data={"action": "bottle", "amount": "4.5", "notes": "Bedtime bottle"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/last-feeding/")
+
+        feeding = models.Feeding.objects.get()
+        self.assertEqual(feeding.child, self.child)
+        self.assertEqual(feeding.amount, 4.5)
+        self.assertEqual(feeding.notes, "Bedtime bottle")
+
+    def test_last_feeding_page_adds_medicine_event(self):
+        response = self.c.post("/last-feeding/", data={"action": "medicine"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/last-feeding/")
+        self.assertEqual(models.MedicineEvent.objects.count(), 1)
+        self.assertEqual(models.MedicineEvent.objects.get().child, self.child)
+
+    def test_last_feeding_page_adds_lay_down_event(self):
+        response = self.c.post("/last-feeding/", data={"action": "lay_down"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/last-feeding/")
+        self.assertEqual(models.LayDownEvent.objects.count(), 1)
+        self.assertEqual(models.LayDownEvent.objects.get().child, self.child)
+
+    def test_last_feeding_page_without_child_creates_nothing(self):
+        models.Child.objects.all().delete()
+
+        response = self.c.post("/last-feeding/", data={"action": "medicine"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/last-feeding/")
+        self.assertEqual(models.MedicineEvent.objects.count(), 0)
+        self.assertEqual(models.Feeding.objects.count(), 0)
+        self.assertEqual(models.LayDownEvent.objects.count(), 0)

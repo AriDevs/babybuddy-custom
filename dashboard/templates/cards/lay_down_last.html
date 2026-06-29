@@ -1,0 +1,26 @@
+{% extends 'cards/base.html' %}
+{% load duration i18n %}
+{% block header %}
+    {% trans "Last Lay Down" %}
+{% endblock %}
+{% block title %}
+    {% if lay_down_event %}
+        <div>
+            {% blocktrans trimmed with time_ago=lay_down_event.time|deltasince|duration_string:'m' %}
+                {{ time_ago }} ago
+            {% endblocktrans %}
+        </div>
+        <small>{{ lay_down_event.time|time }}</small>
+    {% else %}
+        {% trans "None" %}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    {% if lay_down_event %}
+        {% trans "Lay down logged" %}
+        {% if lay_down_event.notes %}
+            <br>
+            {{ lay_down_event.notes }}
+        {% endif %}
+    {% endif %}
+{% endblock %}

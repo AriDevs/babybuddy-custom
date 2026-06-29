@@ -367,6 +367,34 @@ class Feeding(models.Model):
         validate_unique_period(Feeding.objects.filter(child=self.child), self)
 
 
+class MedicineEvent(models.Model):
+    model_name = "medicineevent"
+    child = models.ForeignKey(
+        "Child",
+        on_delete=models.CASCADE,
+        related_name="medicine_event",
+        verbose_name=_("Child"),
+    )
+    time = models.DateTimeField(
+        blank=False, default=timezone.localtime, null=False, verbose_name=_("Time")
+    )
+    notes = models.TextField(blank=True, null=True, verbose_name=_("Notes"))
+
+    objects = models.Manager()
+
+    class Meta:
+        default_permissions = ("view", "add", "change", "delete")
+        ordering = ["-time"]
+        verbose_name = _("Medicine event")
+        verbose_name_plural = _("Medicine events")
+
+    def __str__(self):
+        return str(_("Medicine event"))
+
+    def clean(self):
+        validate_time(self.time, "time")
+
+
 class HeadCircumference(models.Model):
     model_name = "head_circumference"
     child = models.ForeignKey(
@@ -580,6 +608,34 @@ class Sleep(models.Model):
         validate_time(self.end, "end")
         validate_duration(self)
         validate_unique_period(Sleep.objects.filter(child=self.child), self)
+
+
+class LayDownEvent(models.Model):
+    model_name = "laydownevent"
+    child = models.ForeignKey(
+        "Child",
+        on_delete=models.CASCADE,
+        related_name="lay_down_event",
+        verbose_name=_("Child"),
+    )
+    time = models.DateTimeField(
+        blank=False, default=timezone.localtime, null=False, verbose_name=_("Time")
+    )
+    notes = models.TextField(blank=True, null=True, verbose_name=_("Notes"))
+
+    objects = models.Manager()
+
+    class Meta:
+        default_permissions = ("view", "add", "change", "delete")
+        ordering = ["-time"]
+        verbose_name = _("Lay down event")
+        verbose_name_plural = _("Lay down events")
+
+    def __str__(self):
+        return str(_("Lay down event"))
+
+    def clean(self):
+        validate_time(self.time, "time")
 
 
 class Temperature(models.Model):

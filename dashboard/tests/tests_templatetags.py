@@ -26,6 +26,8 @@ class TemplateTagsTestCase(TestCase):
 
         # Ensure timezone matches the one defined by fixtures.
         user_timezone = Settings.objects.first().timezone
+        if user_timezone == "US/Eastern":
+            user_timezone = "America/New_York"
         timezone.activate(user_timezone)
 
         # Test file data uses a basis date of 2017-11-18.
@@ -183,6 +185,23 @@ class TemplateTagsTestCase(TestCase):
         self.assertIsInstance(data["feeding"], models.Feeding)
         self.assertEqual(data["feeding"], models.Feeding.objects.first())
 
+    def test_card_medicine_last(self):
+        instance = models.MedicineEvent.objects.create(
+            child=self.child,
+            time=timezone.localtime(),
+        )
+        data = cards.card_medicine_last(self.context, self.child)
+        self.assertEqual(data["type"], "medicine")
+        self.assertFalse(data["empty"])
+        self.assertFalse(data["hide_empty"])
+        self.assertEqual(data["medicine_event"], instance)
+
+    def test_card_medicine_last_empty(self):
+        data = cards.card_medicine_last(self.context, self.child)
+        self.assertEqual(data["type"], "medicine")
+        self.assertTrue(data["empty"])
+        self.assertFalse(data["hide_empty"])
+
     def test_card_feeding_last_method(self):
         data = cards.card_feeding_last_method(self.context, self.child)
         self.assertEqual(data["type"], "feeding")
@@ -214,6 +233,23 @@ class TemplateTagsTestCase(TestCase):
     def test_card_sleep_last_empty(self):
         models.Sleep.objects.all().delete()
         data = cards.card_sleep_last(self.context, self.child)
+        self.assertEqual(data["type"], "sleep")
+        self.assertTrue(data["empty"])
+        self.assertFalse(data["hide_empty"])
+
+    def test_card_lay_down_last(self):
+        instance = models.LayDownEvent.objects.create(
+            child=self.child,
+            time=timezone.localtime(),
+        )
+        data = cards.card_lay_down_last(self.context, self.child)
+        self.assertEqual(data["type"], "sleep")
+        self.assertFalse(data["empty"])
+        self.assertFalse(data["hide_empty"])
+        self.assertEqual(data["lay_down_event"], instance)
+
+    def test_card_lay_down_last_empty(self):
+        data = cards.card_lay_down_last(self.context, self.child)
         self.assertEqual(data["type"], "sleep")
         self.assertTrue(data["empty"])
         self.assertFalse(data["hide_empty"])

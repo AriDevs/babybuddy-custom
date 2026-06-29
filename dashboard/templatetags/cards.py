@@ -245,6 +245,29 @@ def card_feeding_last(context, child):
     }
 
 
+@register.inclusion_tag("cards/medicine_last.html", takes_context=True)
+def card_medicine_last(context, child):
+    """
+    Information about the most recent medicine event.
+    :param child: an instance of the Child model.
+    :returns: a dictionary with the most recent MedicineEvent instance.
+    """
+    instance = (
+        models.MedicineEvent.objects.filter(child=child)
+        .filter(**_filter_data_age(context, "time"))
+        .order_by("-time")
+        .first()
+    )
+    empty = not instance
+
+    return {
+        "type": "medicine",
+        "medicine_event": instance,
+        "empty": empty,
+        "hide_empty": _hide_empty(context),
+    }
+
+
 @register.inclusion_tag("cards/feeding_last_method.html", takes_context=True)
 def card_feeding_last_method(context, child):
     """
@@ -310,6 +333,29 @@ def card_sleep_last(context, child):
     return {
         "type": "sleep",
         "sleep": instance,
+        "empty": empty,
+        "hide_empty": _hide_empty(context),
+    }
+
+
+@register.inclusion_tag("cards/lay_down_last.html", takes_context=True)
+def card_lay_down_last(context, child):
+    """
+    Information about the most recent lay down event.
+    :param child: an instance of the Child model.
+    :returns: a dictionary with the most recent LayDownEvent instance.
+    """
+    instance = (
+        models.LayDownEvent.objects.filter(child=child)
+        .filter(**_filter_data_age(context, "time"))
+        .order_by("-time")
+        .first()
+    )
+    empty = not instance
+
+    return {
+        "type": "sleep",
+        "lay_down_event": instance,
         "empty": empty,
         "hide_empty": _hide_empty(context),
     }

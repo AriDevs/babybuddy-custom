@@ -69,6 +69,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "babybuddy.middleware.RollingSessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "babybuddy.middleware.UserLoggingMiddleware",
     "babybuddy.middleware.UserTimezoneMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "babybuddy.middleware.UserLanguageMiddleware",
@@ -400,3 +401,4 @@ BABY_BUDDY = {
 ENABLE_HOME_ASSISTANT_SUPPORT = bool(
     strtobool(os.environ.get("ENABLE_HOME_ASSISTANT_SUPPORT") or "False")
 )
+SESSION_SAVE_EVERY_REQUEST = True

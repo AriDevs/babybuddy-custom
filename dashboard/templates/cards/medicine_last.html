@@ -1,0 +1,26 @@
+{% extends 'cards/base.html' %}
+{% load duration i18n %}
+{% block header %}
+    {% trans "Last Medicine" %}
+{% endblock %}
+{% block title %}
+    {% if medicine_event %}
+        <div>
+            {% blocktrans trimmed with time_ago=medicine_event.time|deltasince|duration_string:'m' %}
+                {{ time_ago }} ago
+            {% endblocktrans %}
+        </div>
+        <small>{{ medicine_event.time|time }}</small>
+    {% else %}
+        {% trans "None" %}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    {% if medicine_event %}
+        {% trans "Medicine logged" %}
+        {% if medicine_event.notes %}
+            <br>
+            {{ medicine_event.notes }}
+        {% endif %}
+    {% endif %}
+{% endblock %}

@@ -58,6 +58,29 @@ STORAGES["staticfiles"][
 #         },
 #     },
 # }
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        # Your custom middleware logger
+        "babybuddy_user_audit": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Keep Django logs too (optional but useful)
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}
 
 
 # Django Rest Framework

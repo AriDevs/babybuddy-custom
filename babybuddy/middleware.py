@@ -232,3 +232,36 @@ class HomeAssistant:
                     response.cookies = preserved_cookies
 
         return response
+
+
+# =========================
+# USER LOGGING MIDDLEWARE
+# =========================
+
+logger = logging.getLogger("babybuddy_user_audit")
+
+
+class UserLoggingMiddleware:
+    """
+    Logs user activity for each request.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        print("USER LOGGING MIDDLEWARE HIT")
+        user = (
+            request.user.username
+            if hasattr(request, "user") and request.user.is_authenticated
+            else "Anonymous"
+        )
+        ip = request.META.get("REMOTE_ADDR", "")
+        logger.info(
+            "USER=%s IP=%s METHOD=%s PATH=%s",
+            user,
+            ip,
+            request.method,
+            request.path,
+        )
+        return self.get_response(request)

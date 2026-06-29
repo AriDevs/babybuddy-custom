@@ -18,6 +18,19 @@ guess work.
 
 ![Baby Buddy mobile views](screenshot_mobile.png)
 
+## Customizations In This Fork
+
+This fork includes local workflow changes on top of upstream Baby Buddy:
+
+- Custom `/last-feeding/` quick-entry page for a simplified caregiver dashboard flow
+- One-tap bottle feeding logging from the custom last-feeding screen
+- New persisted `MedicineEvent` and `LayDownEvent` activity models with migration `core.0036_medicineevent_laydownevent`
+- Dashboard cards for “Last Medicine” and “Last Lay Down” shown beneath the feeding section on the child dashboard
+- Medicine card styling and icon alias using the existing temperature glyph as the closest built-in medicine icon
+- Focused Django test coverage for the custom last-feeding actions and dashboard card template tags
+
+These changes are intended to support faster baby-tracking workflows without replacing the rest of Baby Buddy's standard activity pages.
+
 ## 👾 Demo
 
 A [demo of Baby Buddy](https://demo.baby-buddy.net) is available. The demo instance
