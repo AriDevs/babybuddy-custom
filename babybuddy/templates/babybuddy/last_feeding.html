@@ -9,6 +9,21 @@
             window.location.reload();
         }, 60000);
 
+        function applyNightMode() {
+            if (!document.body) {
+                return;
+            }
+
+            const hour = new Date().getHours();
+            const isNightMode = hour >= 23 || hour < 7;
+            document.body.classList.toggle("night-mode", isNightMode);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            applyNightMode();
+            setInterval(applyNightMode, 60000);
+        });
+
         function openBottleModal() {
             document.body.classList.add("modal-open");
             document.getElementById("bottle-modal").style.display = "flex";
@@ -26,40 +41,13 @@
             input.value = value.toFixed(1);
         }
 
-        function todayKey() {
-            const now = new Date();
-            return now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
-        }
-
         function dismissMedicineBanner() {
-            localStorage.setItem("refluxMedicineDismissedDate", todayKey());
             document.getElementById("medicine-form").submit();
         }
 
-        function dismissBedBanner(feedingId) {
-            localStorage.setItem("bedReminderDismissedFeedingId", feedingId);
+        function dismissBedBanner() {
             document.getElementById("bed-form").submit();
         }
-
-        window.onload = function () {
-            const now = new Date();
-            const hour = now.getHours();
-            const dismissedDate = localStorage.getItem("refluxMedicineDismissedDate");
-
-            if (hour === 12 && dismissedDate !== todayKey()) {
-                document.getElementById("medicine-banner").style.display = "flex";
-            }
-
-            {% if show_bed_banner and feeding %}
-            const bedBanner = document.getElementById("bed-banner");
-            const bedReminderFeedingId = "{{ feeding.id }}";
-            const dismissedBedReminder = localStorage.getItem("bedReminderDismissedFeedingId");
-
-            if (bedBanner && dismissedBedReminder !== bedReminderFeedingId) {
-                bedBanner.style.display = "flex";
-            }
-            {% endif %}
-        };
         </script>
         <style>
         * {
@@ -79,6 +67,11 @@
             padding: 14px;
             text-align: center;
             overflow-x: hidden;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        body.night-mode {
+            background: radial-gradient(circle at top, #09131a 0%, #04070b 70%);
         }
 
         body.modal-open {
@@ -93,8 +86,16 @@
             margin-bottom: 16px;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
         .baby-icon {
             font-size: 58px;
+            flex: 0 0 auto;
         }
 
         .title {
@@ -111,6 +112,87 @@
             background: #00aaff;
             color: white;
             font-weight: bold;
+        }
+
+        .night-mode-badge {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex: 0 1 auto;
+            min-width: 0;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 191, 71, 0.14);
+            border: 1px solid rgba(255, 191, 71, 0.32);
+            color: #ffd98a;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        body.night-mode .night-mode-badge {
+            display: inline-flex;
+        }
+
+        body.night-mode .title,
+        body.night-mode .refresh,
+        body.night-mode .fed-at,
+        body.night-mode .feeding-meta,
+        body.night-mode .details,
+        body.night-mode .amount,
+        body.night-mode .status,
+        body.night-mode .medicine-text,
+        body.night-mode .bed-text,
+        body.night-mode .medicine-time,
+        body.night-mode .bed-note,
+        body.night-mode .baby-icon,
+        body.night-mode .bottle-icon {
+            opacity: 0.6;
+        }
+
+        body.night-mode .card {
+            background: rgba(10, 16, 24, 0.86);
+            border-color: rgba(0, 170, 255, 0.38);
+            box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
+        }
+
+        body.night-mode .card.yellow {
+            background: rgba(46, 36, 6, 0.82);
+            border-color: rgba(255, 212, 59, 0.45);
+            box-shadow:
+                0 0 18px rgba(255, 212, 59, 0.18),
+                inset 0 0 18px rgba(255, 212, 59, 0.08);
+        }
+
+        body.night-mode .card.red {
+            background: rgba(52, 12, 12, 0.84);
+            border-color: rgba(255, 77, 77, 0.5);
+            box-shadow:
+                0 0 20px rgba(255, 77, 77, 0.22),
+                inset 0 0 20px rgba(255, 77, 77, 0.08);
+        }
+
+        body.night-mode .medicine-banner {
+            background: rgba(12, 24, 34, 0.9);
+            border-color: rgba(0, 170, 255, 0.45);
+        }
+
+        body.night-mode .bed-banner {
+            background: rgba(16, 27, 22, 0.9);
+            border-color: rgba(91, 224, 139, 0.42);
+        }
+
+        body.night-mode .add-button,
+        body.night-mode .medicine-button,
+        body.night-mode .bed-button,
+        body.night-mode .banner-dismiss-button,
+        body.night-mode .save-button,
+        body.night-mode .cancel-button,
+        body.night-mode .stepper button,
+        body.night-mode .x-button {
+            filter: brightness(0.72);
         }
 
         .medicine-banner,
@@ -163,8 +245,16 @@
             margin-top: 6px;
         }
 
+        .banner-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
         .medicine-button,
-        .bed-button {
+        .bed-button,
+        .banner-dismiss-button {
             font-size: 18px;
             padding: 10px 14px;
             border: none;
@@ -179,6 +269,11 @@
 
         .bed-button {
             background: #27b85f;
+        }
+
+        .banner-dismiss-button {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .card {
@@ -239,34 +334,31 @@
         }
 
         .time {
-            font-size: 200px;
-            line-height: 0.9;
-            font-weight: bold;
-            letter-spacing: -2px;
-            color: white;
+            font-size: 230px;
+            line-height: 0.88;
+            font-weight: 900;
+            letter-spacing: -3px;
+            color: #fcfeff;
             text-shadow:
-                0 0 10px rgba(0, 170, 255, 0.40),
-                0 0 20px rgba(0, 170, 255, 0.25);
+                0 0 20px rgba(235, 248, 255, 0.9),
+                0 0 44px rgba(130, 225, 255, 0.72),
+                0 0 72px rgba(0, 170, 255, 0.34);
         }
 
         .card.yellow .time {
-            color: #ffd43b;
+            color: #fff2b0;
             text-shadow:
-                0 0 12px rgba(255, 212, 59, 0.90),
-                0 0 28px rgba(255, 212, 59, 0.60);
+                0 0 22px rgba(255, 242, 176, 0.96),
+                0 0 46px rgba(255, 228, 120, 0.8),
+                0 0 74px rgba(255, 212, 59, 0.36);
         }
 
         .card.red .time {
-            color: #ff4d4d;
+            color: #ffc0c0;
             text-shadow:
-                0 0 14px rgba(255, 77, 77, 1),
-                0 0 32px rgba(255, 77, 77, 0.75),
-                0 0 55px rgba(255, 77, 77, 0.45);
-        }
-
-        .ago {
-            font-size: 48px;
-            color: #9fdfff;
+                0 0 24px rgba(255, 192, 192, 0.96),
+                0 0 50px rgba(255, 128, 128, 0.84),
+                0 0 80px rgba(255, 77, 77, 0.44);
         }
 
         .details,
@@ -274,6 +366,35 @@
         .status {
             font-size: 30px;
             margin-top: 10px;
+        }
+
+        .details,
+        .amount,
+        .fed-at,
+        .feeding-meta {
+            color: rgba(223, 246, 255, 0.82);
+        }
+
+        .feeding-meta {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .feeding-meta .amount {
+            margin-top: 0;
+        }
+
+        .feeding-meta-separator {
+            opacity: 0.65;
+        }
+
+        .fed-at {
+            font-size: 34px;
+            color: #9fdfff;
+            margin-top: 12px;
         }
 
         .status {
@@ -523,8 +644,14 @@
                 font-size: 16px;
             }
 
+            .banner-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
             .medicine-button,
-            .bed-button {
+            .bed-button,
+            .banner-dismiss-button {
                 width: 100%;
                 font-size: 16px;
             }
@@ -535,18 +662,18 @@
             }
 
             .time {
-                font-size: 88px;
-                line-height: 0.95;
-            }
-
-            .ago {
-                font-size: 42px;
+                font-size: 108px;
+                line-height: 0.92;
             }
 
             .details,
             .amount,
             .status {
                 font-size: 23px;
+            }
+
+            .fed-at {
+                font-size: 24px;
             }
 
             .card.yellow .status {
@@ -640,37 +767,45 @@
     </head>
     <body>
         <div class="header">
-            <div class="baby-icon">👶</div>
+            <div class="header-left">
+                <div class="baby-icon">👶</div>
+                <div class="night-mode-badge">Night mode active</div>
+            </div>
             <div class="title">Spaghetti's Last Feeding</div>
             <button class="add-button" onclick="openBottleModal()">🍼 Add Bottle Feeding</button>
         </div>
-        <div id="medicine-banner" class="medicine-banner">
-            <div class="pasta-icon">🍝</div>
-            <div class="medicine-text">
-                REFLUX MEDICINE
-                <span class="medicine-time">12:00 PM - 12:59 PM</span>
+        {% if show_medicine_banner %}
+            <div id="medicine-banner" class="medicine-banner" style="display: flex;">
+                <div class="pasta-icon">🍝</div>
+                <div class="medicine-text">
+                    REFLUX MEDICINE
+                    <span class="medicine-time">9:00 PM - 11:00 PM</span>
+                </div>
+                <form id="medicine-form" method="post" class="banner-actions">
+                    {% csrf_token %}
+                    <button type="submit" name="action" value="medicine" class="medicine-button">Spaghetti took the sauce!</button>
+                    <button type="submit"
+                            name="action"
+                            value="dismiss_medicine"
+                            class="banner-dismiss-button">Dismiss for tonight</button>
+                </form>
             </div>
-            <form id="medicine-form" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="medicine">
-                <button type="button"
-                        class="medicine-button"
-                        onclick="dismissMedicineBanner()">Spaghetti took the sauce!</button>
-            </form>
-        </div>
+        {% endif %}
         {% if show_bed_banner and feeding %}
-            <div id="bed-banner" class="bed-banner">
+            <div id="bed-banner" class="bed-banner" style="display: flex;">
                 <div class="bed-icon">🛏️</div>
                 <div class="bed-text">
                     Put down the Spaghetti!
                     <span class="bed-note">If she's awake, bed practice is on the menu.</span>
                 </div>
-                <form id="bed-form" method="post">
+                <form id="bed-form" method="post" class="banner-actions">
                     {% csrf_token %}
-                    <input type="hidden" name="action" value="lay_down">
-                    <button type="button"
-                            class="bed-button"
-                            onclick="dismissBedBanner('{{ feeding.id }}')">Spaghetti is tucked in!</button>
+                    <input type="hidden" name="feeding_id" value="{{ feeding.id }}">
+                    <button type="submit" name="action" value="lay_down" class="bed-button">Spaghetti is tucked in!</button>
+                    <button type="submit"
+                            name="action"
+                            value="dismiss_bed"
+                            class="banner-dismiss-button">Dismiss until next feeding</button>
                 </form>
             </div>
         {% endif %}
@@ -678,10 +813,14 @@
             <div class="card {{ alert_level }}">
                 <div class="bottle-icon">🍼</div>
                 <div class="time">{{ hours }}h {{ minutes }}m</div>
-                <div class="ago">ago</div>
-                <div class="details">{{ feeding.start|date:"g:i A" }}</div>
-                <div class="details">{{ feeding.method|title }}, {{ feeding.type|title }}</div>
-                {% if feeding.amount %}<div class="amount">{{ feeding.amount }} oz</div>{% endif %}
+                <div class="fed-at">Fed at {{ feeding.start|date:"g:i A" }}</div>
+                <div class="feeding-meta details">
+                    <span>{{ feeding.method|title }}, {{ feeding.type|title }}</span>
+                    {% if feeding.amount %}
+                        <span class="feeding-meta-separator">•</span>
+                        <span class="amount">{{ feeding.amount }} oz</span>
+                    {% endif %}
+                </div>
                 {% if alert_level == "yellow" %}
                     <div class="status">FEED SOON</div>
                 {% elif alert_level == "red" %}

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import re
 import time
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings, tag
 from django.test import Client as HttpClient
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.management import call_command
+from django.utils import timezone
 
 from faker import Faker
 
@@ -195,3 +197,82 @@ class LastFeedingPageTestCase(TestCase):
         self.assertEqual(models.MedicineEvent.objects.count(), 0)
         self.assertEqual(models.Feeding.objects.count(), 0)
         self.assertEqual(models.LayDownEvent.objects.count(), 0)
+
+    def test_last_feeding_page_hides_medicine_banner_after_medicine_logged(self):
+        now = timezone.make_aware(timezone.datetime(2026, 7, 3, 21, 30))
+
+        with patch(
+            "babybuddy.last_feeding_views.timezone.now", return_value=now
+        ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
+            response = self.c.get("/last-feeding/")
+            self.assertContains(response, "REFLUX MEDICINE")
+
+            self.c.post("/last-feeding/", data={"action": "medicine"})
+            response = self.c.get("/last-feeding/")
+            self.assertNotContains(response, "REFLUX MEDICINE")
+
+    def test_last_feeding_page_hides_bed_banner_after_lay_down_logged(self):
+        now = timezone.make_aware(timezone.datetime(2026, 7, 3, 13, 0))
+        feeding_start = now - timezone.timedelta(minutes=90)
+        models.Feeding.objects.create(
+            child=self.child,
+            start=feeding_start,
+            end=feeding_start,
+            type="formula",
+            method="bottle",
+            amount=4.0,
+        )
+
+        with patch(
+            "babybuddy.last_feeding_views.timezone.now", return_value=now
+        ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
+            response = self.c.get("/last-feeding/")
+            self.assertContains(response, "Put down the Spaghetti!")
+
+            self.c.post("/last-feeding/", data={"action": "lay_down"})
+            response = self.c.get("/last-feeding/")
+            self.assertNotContains(response, "Put down the Spaghetti!")
+
+    def test_last_feeding_page_dismisses_medicine_banner_without_logging(self):
+        now = timezone.make_aware(timezone.datetime(2026, 7, 3, 21, 30))
+
+        with patch(
+            "babybuddy.last_feeding_views.timezone.now", return_value=now
+        ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
+            response = self.c.get("/last-feeding/")
+            self.assertContains(response, "REFLUX MEDICINE")
+
+            self.c.post("/last-feeding/", data={"action": "dismiss_medicine"})
+            response = self.c.get("/last-feeding/")
+            self.assertNotContains(response, "REFLUX MEDICINE")
+
+        self.assertEqual(models.MedicineEvent.objects.count(), 0)
+        self.assertEqual(models.BannerDismissal.objects.count(), 1)
+
+    def test_last_feeding_page_dismisses_bed_banner_without_logging(self):
+        now = timezone.make_aware(timezone.datetime(2026, 7, 3, 13, 0))
+        feeding_start = now - timezone.timedelta(minutes=90)
+        feeding = models.Feeding.objects.create(
+            child=self.child,
+            start=feeding_start,
+            end=feeding_start,
+            type="formula",
+            method="bottle",
+            amount=4.0,
+        )
+
+        with patch(
+            "babybuddy.last_feeding_views.timezone.now", return_value=now
+        ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
+            response = self.c.get("/last-feeding/")
+            self.assertContains(response, "Put down the Spaghetti!")
+
+            self.c.post(
+                "/last-feeding/",
+                data={"action": "dismiss_bed", "feeding_id": feeding.id},
+            )
+            response = self.c.get("/last-feeding/")
+            self.assertNotContains(response, "Put down the Spaghetti!")
+
+        self.assertEqual(models.LayDownEvent.objects.count(), 0)
+        self.assertEqual(models.BannerDismissal.objects.count(), 1)

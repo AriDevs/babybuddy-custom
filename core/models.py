@@ -638,6 +638,59 @@ class LayDownEvent(models.Model):
         validate_time(self.time, "time")
 
 
+class BannerDismissal(models.Model):
+    MEDICINE = "medicine"
+    BED = "bed"
+    BANNER_TYPES = [
+        (MEDICINE, _("Medicine")),
+        (BED, _("Bed")),
+    ]
+
+    model_name = "bannerdismissal"
+    child = models.ForeignKey(
+        "Child",
+        on_delete=models.CASCADE,
+        related_name="banner_dismissal",
+        verbose_name=_("Child"),
+    )
+    banner_type = models.CharField(
+        blank=False,
+        choices=BANNER_TYPES,
+        max_length=32,
+        verbose_name=_("Banner type"),
+    )
+    reminder_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Reminder date"),
+    )
+    feeding = models.ForeignKey(
+        "Feeding",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="banner_dismissal",
+        verbose_name=_("Feeding"),
+    )
+    dismissed_at = models.DateTimeField(
+        blank=False,
+        default=timezone.localtime,
+        null=False,
+        verbose_name=_("Dismissed at"),
+    )
+
+    objects = models.Manager()
+
+    class Meta:
+        default_permissions = ("view", "add", "change", "delete")
+        ordering = ["-dismissed_at"]
+        verbose_name = _("Banner dismissal")
+        verbose_name_plural = _("Banner dismissals")
+
+    def __str__(self):
+        return str(_("Banner dismissal"))
+
+
 class Temperature(models.Model):
     model_name = "temperature"
     child = models.ForeignKey(
