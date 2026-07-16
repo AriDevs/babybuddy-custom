@@ -9,19 +9,36 @@
             window.location.reload();
         }, 60000);
 
+        function updateCurrentTime() {
+            const currentTime = document.getElementById("current-time");
+            if (!currentTime) {
+                return;
+            }
+
+            currentTime.textContent = new Intl.DateTimeFormat("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+            }).format(new Date());
+        }
+
         function applyNightMode() {
             if (!document.body) {
                 return;
             }
 
             const hour = new Date().getHours();
-            const isNightMode = hour >= 23 || hour < 7;
+            const isNightMode = hour >= 22 || hour < 9;
             document.body.classList.toggle("night-mode", isNightMode);
         }
 
         document.addEventListener("DOMContentLoaded", function () {
             applyNightMode();
-            setInterval(applyNightMode, 60000);
+            updateCurrentTime();
+            setInterval(function () {
+                applyNightMode();
+                updateCurrentTime();
+            }, 60000);
         });
 
         function openBottleModal() {
@@ -31,6 +48,16 @@
 
         function closeBottleModal() {
             document.getElementById("bottle-modal").style.display = "none";
+            document.body.classList.remove("modal-open");
+        }
+
+        function openManualEntryModal() {
+            document.body.classList.add("modal-open");
+            document.getElementById("manual-entry-modal").style.display = "flex";
+        }
+
+        function closeManualEntryModal() {
+            document.getElementById("manual-entry-modal").style.display = "none";
             document.body.classList.remove("modal-open");
         }
 
@@ -86,6 +113,13 @@
             margin-bottom: 16px;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
         .header-left {
             display: flex;
             align-items: center;
@@ -104,14 +138,22 @@
             color: #dff6ff;
         }
 
-        .add-button {
+        .add-button,
+        .menu-button {
             font-size: 20px;
             padding: 12px 16px;
             border: none;
             border-radius: 14px;
-            background: #00aaff;
             color: white;
             font-weight: bold;
+        }
+
+        .add-button {
+            background: #00aaff;
+        }
+
+        .menu-button {
+            background: #274659;
         }
 
         .night-mode-badge {
@@ -143,6 +185,8 @@
         body.night-mode .details,
         body.night-mode .amount,
         body.night-mode .status,
+        body.night-mode .time,
+        body.night-mode .current-time,
         body.night-mode .medicine-text,
         body.night-mode .bed-text,
         body.night-mode .medicine-time,
@@ -185,6 +229,7 @@
         }
 
         body.night-mode .add-button,
+        body.night-mode .menu-button,
         body.night-mode .medicine-button,
         body.night-mode .bed-button,
         body.night-mode .banner-dismiss-button,
@@ -301,6 +346,9 @@
             box-shadow:
                 0 0 35px rgba(255, 77, 77, 0.90),
                 inset 0 0 35px rgba(255, 77, 77, 0.15);
+        }
+
+        .card.blinking.red {
             animation: red-pulse 1.4s infinite;
         }
 
@@ -338,27 +386,27 @@
             line-height: 0.88;
             font-weight: 900;
             letter-spacing: -3px;
-            color: #eef8fd;
+            color: #e6f3fa;
             text-shadow:
-                0 0 10px rgba(214, 236, 248, 0.62),
-                0 0 24px rgba(96, 194, 232, 0.4),
-                0 0 38px rgba(0, 170, 255, 0.14);
+                0 0 8px rgba(206, 230, 244, 0.5),
+                0 0 18px rgba(88, 184, 222, 0.3),
+                0 0 28px rgba(0, 170, 255, 0.1);
         }
 
         .card.yellow .time {
-            color: #ffe37c;
+            color: #ffdd69;
             text-shadow:
-                0 0 12px rgba(255, 228, 124, 0.74),
-                0 0 26px rgba(255, 214, 84, 0.46),
-                0 0 40px rgba(255, 212, 59, 0.16);
+                0 0 10px rgba(255, 221, 105, 0.62),
+                0 0 22px rgba(255, 208, 72, 0.34),
+                0 0 32px rgba(255, 212, 59, 0.12);
         }
 
         .card.red .time {
-            color: #ff9797;
+            color: #ff8a8a;
             text-shadow:
-                0 0 14px rgba(255, 158, 158, 0.76),
-                0 0 28px rgba(255, 104, 104, 0.5),
-                0 0 44px rgba(255, 77, 77, 0.18);
+                0 0 12px rgba(255, 148, 148, 0.64),
+                0 0 24px rgba(255, 98, 98, 0.38),
+                0 0 36px rgba(255, 77, 77, 0.12);
         }
 
         .details,
@@ -410,17 +458,53 @@
             text-transform: uppercase;
         }
 
+        .card.blinking.yellow .status {
+            animation: status-blink-yellow 1.2s infinite;
+        }
+
         .card.red .status {
-            color: #ffdd57;
+            color: #ff8a8a;
             font-size: 42px;
             font-weight: 900;
             text-transform: uppercase;
+        }
+
+        .card.blinking.red .status {
+            animation: status-blink-red 1s infinite;
+        }
+
+        @keyframes status-blink-yellow {
+            0%, 45%, 100% {
+                opacity: 1;
+            }
+
+            55%, 85% {
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes status-blink-red {
+            0%, 40%, 100% {
+                opacity: 1;
+            }
+
+            50%, 80% {
+                opacity: 0.2;
+            }
         }
 
         .refresh {
             font-size: 22px;
             margin-top: 22px;
             color: #9fdfff;
+        }
+
+        .current-time {
+            font-size: 115px;
+            line-height: 0.95;
+            margin-top: 8px;
+            color: #9fdfff;
+            font-weight: 700;
         }
 
         .modal {
@@ -666,6 +750,10 @@
                 line-height: 0.92;
             }
 
+            .current-time {
+                font-size: 54px;
+            }
+
             .details,
             .amount,
             .status {
@@ -687,6 +775,39 @@
             .bottle-icon {
                 font-size: 48px;
                 right: 12px;
+            }
+
+            .header-actions {
+                gap: 8px;
+            }
+
+            .add-button,
+            .menu-button {
+                font-size: 15px;
+                padding: 9px 10px;
+            }
+
+            .manual-entry-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .manual-entry-card {
+                padding: 14px;
+            }
+
+            .manual-entry-card-title {
+                font-size: 18px;
+            }
+
+            .manual-entry-input {
+                font-size: 18px;
+                padding: 10px 12px;
+            }
+
+            .manual-entry-button {
+                font-size: 16px;
+                padding: 10px 12px;
             }
 
             .modal {
@@ -772,7 +893,10 @@
                 <div class="night-mode-badge">Night mode active</div>
             </div>
             <div class="title">Spaghetti's Last Feeding</div>
-            <button class="add-button" onclick="openBottleModal()">🍼 Add Bottle Feeding</button>
+            <div class="header-actions">
+                <button class="menu-button" onclick="openManualEntryModal()">📝 Manual Entry</button>
+                <button class="add-button" onclick="openBottleModal()">🍼 Add Bottle Feeding</button>
+            </div>
         </div>
         {% if show_medicine_banner %}
             <div id="medicine-banner" class="medicine-banner" style="display: flex;">
@@ -810,7 +934,7 @@
             </div>
         {% endif %}
         {% if feeding %}
-            <div class="card {{ alert_level }}">
+            <div class="card {{ alert_level }}{% if should_blink_alert %} blinking{% endif %}">
                 <div class="bottle-icon">🍼</div>
                 <div class="time">{{ hours }}h {{ minutes }}m</div>
                 <div class="fed-at">Fed at {{ feeding.start|date:"g:i A" }}</div>
@@ -833,6 +957,55 @@
             </div>
         {% endif %}
         <div class="refresh">🔄 Refreshes every 1 minute</div>
+        <div id="current-time" class="current-time" aria-live="polite"></div>
+        <div id="manual-entry-modal" class="modal">
+            <div class="modal-content">
+                <div>
+                    <div class="modal-top">
+                        <div class="modal-icon">📝</div>
+                        <div class="modal-title">Manual Activity Entry</div>
+                        <button type="button" class="x-button" onclick="closeManualEntryModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="manual-entry-grid">
+                            <div class="manual-entry-card">
+                                <div class="manual-entry-card-title">🍝 Last medicine</div>
+                                <form method="post" class="manual-entry-form">
+                                    {% csrf_token %}
+                                    <input class="manual-entry-input"
+                                           type="datetime-local"
+                                           name="event_time"
+                                           value="{{ manual_event_time_value }}">
+                                    <button type="submit"
+                                            name="action"
+                                            value="medicine_manual"
+                                            class="manual-entry-button medicine">Save last medicine time</button>
+                                    <div class="manual-entry-hint">Use this when the medicine happened earlier and you need to backfill it.</div>
+                                </form>
+                            </div>
+                            <div class="manual-entry-card">
+                                <div class="manual-entry-card-title">🛏️ Last lay down</div>
+                                <form method="post" class="manual-entry-form">
+                                    {% csrf_token %}
+                                    <input class="manual-entry-input"
+                                           type="datetime-local"
+                                           name="event_time"
+                                           value="{{ manual_event_time_value }}">
+                                    <button type="submit"
+                                            name="action"
+                                            value="lay_down_manual"
+                                            class="manual-entry-button bed">Save last lay down time</button>
+                                    <div class="manual-entry-hint">Use this when bed practice happened earlier and you need to backfill it.</div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" class="cancel-button" onclick="closeManualEntryModal()">✕ Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="bottle-modal" class="modal">
             <div class="modal-content">
                 <form method="post">

@@ -250,6 +250,10 @@
    href="{% url 'core:feeding-list' %}"><i class="icon-feeding" aria-hidden="true"></i>
 {% trans "Feedings" %}
 </a>
+<a class="dropdown-item{% if request.path == '/last-feeding/' %} active{% endif %}"
+   href="{% url 'babybuddy:last_feeding_page' %}"><i class="icon-dashboard" aria-hidden="true"></i>
+{% trans "Last Feeding" %}
+</a>
 {% endif %}
 {% if perms.core.add_feeding %}
 <a class="dropdown-item ps-5{% if request.path == '/feedings/add/' %} active{% endif %}"

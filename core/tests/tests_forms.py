@@ -348,6 +348,28 @@ class FeedingFormsTestCase(FormsTestCaseBase):
         self.assertContains(page, "Feeding entry for {} added".format(str(self.child)))
         self.assertNotContains(page, "intersects the specified time period")
 
+    def test_add_mixed_bottle_feeding(self):
+        start = timezone.localtime() - timezone.timedelta(minutes=20)
+        params = {
+            "child": self.child.id,
+            "start": self.localtime_string(start),
+            "type": "mixed breast milk and formula",
+            "breast_milk_amount": 2.5,
+            "formula_amount": 1.5,
+            "notes": "Night bottle",
+        }
+        page = self.c.post("/feedings/bottle/add/", params, follow=True)
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Feeding entry for {} added".format(str(self.child)))
+
+        feeding = models.Feeding.objects.order_by("-id").first()
+        self.assertEqual(feeding.type, "mixed breast milk and formula")
+        self.assertEqual(feeding.method, "bottle")
+        self.assertEqual(feeding.amount, 4.0)
+        self.assertIn("2.5 oz breast milk", feeding.notes)
+        self.assertIn("1.5 oz formula", feeding.notes)
+        self.assertIn("Night bottle", feeding.notes)
+
 
 class HeadCircumferenceFormsTestCase(FormsTestCaseBase):
     @classmethod

@@ -165,21 +165,89 @@ class BMIForm(CoreModelForm, TaggableModelForm):
 
 
 class BottleFeedingForm(CoreModelForm, TaggableModelForm):
+    MIXED_TYPE = "mixed breast milk and formula"
+
+    breast_milk_amount = forms.FloatField(
+        label=_("Breast milk amount"),
+        required=False,
+        min_value=0,
+        help_text=_("Used only for mixed bottles."),
+        widget=forms.NumberInput(attrs={"step": "0.25", "min": "0"}),
+    )
+    formula_amount = forms.FloatField(
+        label=_("Formula amount"),
+        required=False,
+        min_value=0,
+        help_text=_("Used only for mixed bottles."),
+        widget=forms.NumberInput(attrs={"step": "0.25", "min": "0"}),
+    )
+
     fieldsets = [
-        {"fields": ["child", "type", "start", "amount"], "layout": "required"},
+        {
+            "fields": [
+                "child",
+                "type",
+                "start",
+                "amount",
+                "breast_milk_amount",
+                "formula_amount",
+            ],
+            "layout": "required",
+        },
         {"fields": ["notes", "tags"], "layout": "advanced"},
     ]
 
     def clean(self):
         cleaned_data = super().clean()
+        feeding_type = cleaned_data.get("type")
+        breast_milk_amount = cleaned_data.get("breast_milk_amount")
+        formula_amount = cleaned_data.get("formula_amount")
+
         if "start" in cleaned_data:
             self.instance.end = cleaned_data["start"]
+
+        if feeding_type == self.MIXED_TYPE:
+            if not breast_milk_amount:
+                self.add_error(
+                    "breast_milk_amount",
+                    _("Enter the breast milk amount for a mixed bottle."),
+                )
+            if not formula_amount:
+                self.add_error(
+                    "formula_amount",
+                    _("Enter the formula amount for a mixed bottle."),
+                )
+            if not self.errors:
+                cleaned_data["amount"] = breast_milk_amount + formula_amount
+        elif breast_milk_amount or formula_amount:
+            self.add_error(
+                "type",
+                _(
+                    "Select 'Mixed breast milk and formula' to use separate bottle amounts."
+                ),
+            )
+
         return cleaned_data
 
     def save(self, commit=True):
         instance = super(BottleFeedingForm, self).save(commit=False)
         instance.method = "bottle"
         instance.end = instance.start
+
+        breast_milk_amount = self.cleaned_data.get("breast_milk_amount")
+        formula_amount = self.cleaned_data.get("formula_amount")
+        if self.cleaned_data.get("type") == self.MIXED_TYPE:
+            instance.amount = self.cleaned_data["amount"]
+            breakdown = _(
+                "Mixed bottle breakdown: %(breast_milk)s oz breast milk, %(formula)s oz formula"
+            ) % {
+                "breast_milk": breast_milk_amount,
+                "formula": formula_amount,
+            }
+            instance.notes = (
+                f"{breakdown}\n\n{instance.notes}" if instance.notes else breakdown
+            )
+
         if commit:
             instance.save()
             self.save_m2m()
@@ -192,6 +260,7 @@ class BottleFeedingForm(CoreModelForm, TaggableModelForm):
             "child": ChildRadioSelect,
             "start": DateTimeInput(),
             "type": PillRadioSelect(),
+            "amount": forms.NumberInput(attrs={"step": "0.25", "min": "0"}),
             "notes": forms.Textarea(attrs={"rows": 5}),
         }
 
@@ -268,6 +337,7 @@ class FeedingForm(CoreModelForm, TaggableModelForm):
             "end": DateTimeInput(),
             "type": PillRadioSelect(),
             "method": PillRadioSelect(),
+            "amount": forms.NumberInput(attrs={"step": "0.25", "min": "0"}),
             "notes": forms.Textarea(attrs={"rows": 5}),
         }
 

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -12,6 +14,18 @@ from core.models import (
 )
 
 
+def parse_manual_event_time(value, fallback):
+    if not value:
+        return fallback
+
+    try:
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        return fallback
+
+    return timezone.make_aware(parsed, timezone.get_current_timezone())
+
+
 @login_required
 def last_feeding_page(request):
     now = timezone.now()
@@ -22,8 +36,14 @@ def last_feeding_page(request):
         action = request.POST.get("action", "bottle")
 
         if child:
+            manual_event_time = parse_manual_event_time(
+                request.POST.get("event_time"), now
+            )
+
             if action == "medicine":
                 MedicineEvent.objects.create(child=child, time=now)
+            elif action == "medicine_manual":
+                MedicineEvent.objects.create(child=child, time=manual_event_time)
             elif action == "dismiss_medicine":
                 BannerDismissal.objects.update_or_create(
                     child=child,
@@ -33,6 +53,8 @@ def last_feeding_page(request):
                 )
             elif action == "lay_down":
                 LayDownEvent.objects.create(child=child, time=now)
+            elif action == "lay_down_manual":
+                LayDownEvent.objects.create(child=child, time=manual_event_time)
             elif action == "dismiss_bed":
                 feeding_id = request.POST.get("feeding_id")
                 feeding = Feeding.objects.filter(id=feeding_id, child=child).first()
@@ -64,6 +86,7 @@ def last_feeding_page(request):
     hours = 0
     minutes = 0
     alert_level = "normal"
+    should_blink_alert = False
     show_medicine_banner = False
     show_bed_banner = False
 
@@ -87,7 +110,7 @@ def last_feeding_page(request):
         minutes_since_feeding = int((now - feeding.start).total_seconds() / 60)
         hours = minutes_since_feeding // 60
         minutes = minutes_since_feeding % 60
-        is_quiet_hour = local_now.hour < 9
+        is_quiet_hour = local_now.hour >= 21 or local_now.hour < 8
         is_sleeping = Sleep.objects.filter(
             child=feeding.child,
             start__lte=now,
@@ -110,8 +133,10 @@ def last_feeding_page(request):
 
         if minutes_since_feeding >= 180:
             alert_level = "red"
+            should_blink_alert = minutes_since_feeding >= 210
         elif minutes_since_feeding >= 120:
             alert_level = "yellow"
+            should_blink_alert = minutes_since_feeding >= 150
 
     context = {
         "feeding": feeding,
@@ -119,8 +144,10 @@ def last_feeding_page(request):
         "hours": hours,
         "minutes": minutes,
         "alert_level": alert_level,
+        "should_blink_alert": should_blink_alert,
         "show_medicine_banner": show_medicine_banner,
         "show_bed_banner": show_bed_banner,
+        "manual_event_time_value": local_now.strftime("%Y-%m-%dT%H:%M"),
     }
 
     return render(request, "babybuddy/last_feeding.html", context)

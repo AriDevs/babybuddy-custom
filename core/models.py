@@ -323,6 +323,10 @@ class Feeding(models.Model):
         choices=[
             ("breast milk", _("Breast milk")),
             ("formula", _("Formula")),
+            (
+                "mixed breast milk and formula",
+                _("Mixed breast milk and formula"),
+            ),
             ("fortified breast milk", _("Fortified breast milk")),
             ("solid food", _("Solid food")),
         ],

@@ -187,6 +187,42 @@ class LastFeedingPageTestCase(TestCase):
         self.assertEqual(models.LayDownEvent.objects.count(), 1)
         self.assertEqual(models.LayDownEvent.objects.get().child, self.child)
 
+    def test_last_feeding_page_adds_manual_medicine_event(self):
+        response = self.c.post(
+            "/last-feeding/",
+            data={
+                "action": "medicine_manual",
+                "event_time": "2026-07-07T21:15",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/last-feeding/")
+        event = models.MedicineEvent.objects.get()
+        self.assertEqual(event.child, self.child)
+        self.assertEqual(
+            timezone.localtime(event.time).strftime("%Y-%m-%dT%H:%M"),
+            "2026-07-07T21:15",
+        )
+
+    def test_last_feeding_page_adds_manual_lay_down_event(self):
+        response = self.c.post(
+            "/last-feeding/",
+            data={
+                "action": "lay_down_manual",
+                "event_time": "2026-07-07T19:45",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/last-feeding/")
+        event = models.LayDownEvent.objects.get()
+        self.assertEqual(event.child, self.child)
+        self.assertEqual(
+            timezone.localtime(event.time).strftime("%Y-%m-%dT%H:%M"),
+            "2026-07-07T19:45",
+        )
+
     def test_last_feeding_page_without_child_creates_nothing(self):
         models.Child.objects.all().delete()
 
@@ -276,3 +312,43 @@ class LastFeedingPageTestCase(TestCase):
 
         self.assertEqual(models.LayDownEvent.objects.count(), 0)
         self.assertEqual(models.BannerDismissal.objects.count(), 1)
+
+    def test_last_feeding_page_hides_bed_banner_during_evening_quiet_hours(self):
+        now = timezone.make_aware(timezone.datetime(2026, 7, 3, 21, 30))
+        feeding_start = now - timezone.timedelta(minutes=90)
+        models.Feeding.objects.create(
+            child=self.child,
+            start=feeding_start,
+            end=feeding_start,
+            type="formula",
+            method="bottle",
+            amount=4.0,
+        )
+
+        with patch(
+            "babybuddy.last_feeding_views.timezone.now", return_value=now
+        ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
+            response = self.c.get("/last-feeding/")
+            self.assertNotContains(response, "Put down the Spaghetti!")
+
+    def test_last_feeding_page_feed_alert_thresholds(self):
+        feeding_start = timezone.now() - timezone.timedelta(minutes=120)
+        models.Feeding.objects.create(
+            child=self.child,
+            start=feeding_start,
+            end=feeding_start,
+            type="formula",
+            method="bottle",
+            amount=4.0,
+        )
+
+        response = self.c.get("/last-feeding/")
+        self.assertContains(response, "FEED SOON")
+        self.assertNotContains(response, "FEED NOW")
+
+        feeding = models.Feeding.objects.get()
+        feeding.start = timezone.now() - timezone.timedelta(minutes=210)
+        feeding.end = feeding.start
+        feeding.save(update_fields=("start", "end"))
+        response = self.c.get("/last-feeding/")
+        self.assertContains(response, "FEED NOW")
