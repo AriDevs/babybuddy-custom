@@ -140,6 +140,7 @@ def last_feeding_page(request):
 
     context = {
         "feeding": feeding,
+        "child": child,
         "minutes_since_feeding": minutes_since_feeding,
         "hours": hours,
         "minutes": minutes,
@@ -147,6 +148,12 @@ def last_feeding_page(request):
         "should_blink_alert": should_blink_alert,
         "show_medicine_banner": show_medicine_banner,
         "show_bed_banner": show_bed_banner,
+        "medicine_window_start": local_now.replace(
+            hour=21, minute=0, second=0, microsecond=0
+        ),
+        "medicine_window_end": local_now.replace(
+            hour=23, minute=0, second=0, microsecond=0
+        ),
         "manual_event_time_value": local_now.strftime("%Y-%m-%dT%H:%M"),
     }
 

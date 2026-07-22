@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Spaghetti's Last Feeding</title>
+        <title>{{ child.first_name }}'s Last Feeding</title>
         <meta name="viewport"
               content="width=device-width, initial-scale=1, viewport-fit=cover">
         <script>
-        setTimeout(function () {
-            window.location.reload();
-        }, 60000);
+        function updateElapsedFeedingTime() {
+            const timer = document.querySelector(".time[data-feeding-start]");
+            if (!timer) {
+                return;
+            }
+
+            const feedingStart = new Date(timer.dataset.feedingStart);
+            const minutesSinceFeeding = Math.max(0, Math.floor((Date.now() - feedingStart.getTime()) / 60000));
+            timer.textContent = Math.floor(minutesSinceFeeding / 60) + "h " + (minutesSinceFeeding % 60) + "m";
+        }
 
         function updateCurrentTime() {
             const currentTime = document.getElementById("current-time");
@@ -32,14 +39,46 @@
             document.body.classList.toggle("night-mode", isNightMode);
         }
 
+        function updateViewportClass() {
+            const viewport = window.visualViewport || window;
+            const isLandscapeTablet = viewport.width >= 900 && viewport.width > viewport.height && viewport.width <= 1600;
+            document.documentElement.classList.toggle("landscape-tablet", isLandscapeTablet);
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             applyNightMode();
             updateCurrentTime();
+            updateElapsedFeedingTime();
+            updateViewportClass();
+            fitPageToViewport();
+            requestAnimationFrame(fitPageToViewport);
+            setTimeout(fitPageToViewport, 250);
+            if (document.fonts) {
+                document.fonts.ready.then(fitPageToViewport);
+            }
+            setTimeout(function () {
+                document.body.classList.add("layout-ready");
+            }, 1000);
             setInterval(function () {
                 applyNightMode();
                 updateCurrentTime();
+                updateElapsedFeedingTime();
             }, 60000);
         });
+
+        window.addEventListener("resize", function () {
+            updateViewportClass();
+            fitPageToViewport();
+        });
+        window.addEventListener("orientationchange", function () {
+            setTimeout(function () {
+                updateViewportClass();
+                fitPageToViewport();
+            }, 100);
+        });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener("resize", fitPageToViewport);
+        }
 
         function openBottleModal() {
             document.body.classList.add("modal-open");
@@ -75,6 +114,46 @@
         function dismissBedBanner() {
             document.getElementById("bed-form").submit();
         }
+
+        function fitPageToViewport() {
+            const page = document.getElementById("page-content");
+            if (!page) {
+                return;
+            }
+
+            page.style.transform = "none";
+            page.style.height = "auto";
+
+            const viewport = window.visualViewport || window;
+            const availableWidth = Math.max(1, viewport.width);
+            const availableHeight = Math.max(1, viewport.height);
+            const pageWidth = Math.max(page.scrollWidth, page.getBoundingClientRect().width);
+            const pageHeight = Math.max(page.scrollHeight, page.getBoundingClientRect().height);
+            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+            const scale = isLandscape ? Math.min(1, availableWidth / pageWidth) : Math.min(1, availableWidth / pageWidth, availableHeight / pageHeight);
+
+            if (isLandscape) {
+                const timer = page.querySelector(".time");
+                const currentTime = page.querySelector(".current-time");
+                const timerSize = Math.min(230, Math.max(110, availableHeight * 0.26));
+                const currentTimeSize = Math.min(140, Math.max(64, availableHeight * 0.14));
+                if (timer) timer.style.setProperty("font-size", timerSize + "px", "important");
+                if (currentTime) currentTime.style.setProperty("font-size", currentTimeSize + "px", "important");
+                page.querySelectorAll(".fed-at, .feeding-meta, .amount, .status").forEach(function (element) {
+                    const ratio = element.classList.contains("fed-at") ? 0.06 : 0.055;
+                    const minimum = element.classList.contains("status") ? 26 : 22;
+                    const maximum = element.classList.contains("status") ? 58 : 48;
+                    const size = Math.min(maximum, Math.max(minimum, availableHeight * ratio));
+                    element.style.setProperty("font-size", size + "px", "important");
+                });
+            }
+
+            page.style.transformOrigin = "top left";
+            page.style.transform = "scale(" + scale + ")";
+            page.style.height = (pageHeight * scale) + "px";
+            document.documentElement.style.setProperty("--page-scale", scale);
+            document.body.classList.add("layout-ready");
+        }
         </script>
         <style>
         * {
@@ -88,6 +167,7 @@
         }
 
         body {
+            visibility: hidden;
             background: radial-gradient(circle at top, #102331 0%, #071018 65%);
             color: white;
             font-family: Arial, sans-serif;
@@ -95,6 +175,10 @@
             text-align: center;
             overflow-x: hidden;
             transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        body.layout-ready {
+            visibility: visible;
         }
 
         body.night-mode {
@@ -136,6 +220,7 @@
             font-size: 32px;
             font-weight: bold;
             color: #dff6ff;
+            overflow-wrap: anywhere;
         }
 
         .add-button,
@@ -146,6 +231,8 @@
             border-radius: 14px;
             color: white;
             font-weight: bold;
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
 
         .add-button {
@@ -242,6 +329,7 @@
 
         .medicine-banner,
         .bed-banner {
+            width: 100%;
             display: none;
             align-items: center;
             justify-content: center;
@@ -249,7 +337,9 @@
             border-radius: 20px;
             padding: 14px;
             margin: 0 auto 18px auto;
-            max-width: 900px;
+            max-width: min(900px, 100%);
+            min-width: 0;
+            flex-wrap: wrap;
         }
 
         .medicine-banner {
@@ -269,9 +359,12 @@
 
         .medicine-text,
         .bed-text {
+            min-width: 0;
+            max-width: 100%;
             font-size: 24px;
             font-weight: bold;
             color: #dff6ff;
+            overflow-wrap: anywhere;
         }
 
         .medicine-time {
@@ -292,6 +385,8 @@
 
         .banner-actions {
             display: flex;
+            flex: 1 1 280px;
+            min-width: 0;
             gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
@@ -300,12 +395,16 @@
         .medicine-button,
         .bed-button,
         .banner-dismiss-button {
+            min-width: 0;
+            max-width: 100%;
             font-size: 18px;
             padding: 10px 14px;
             border: none;
             border-radius: 12px;
             color: white;
             font-weight: bold;
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
 
         .medicine-button {
@@ -884,80 +983,995 @@
                 padding: 12px 8px;
             }
         }
+
+        /* Viewport-safe layout overrides */
+        body {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .header {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .title {
+            min-width: 0;
+            max-width: 100%;
+            font-size: clamp(20px, 3vw, 32px);
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-actions {
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+
+        .add-button,
+        .menu-button {
+            max-width: 100%;
+        }
+
+         @media (max-width: 900px) {
+            .header {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+
+            .header-left {
+                flex: 0 1 auto;
+            }
+
+            .header-actions {
+                flex: 1 1 auto;
+                justify-content: flex-end;
+            }
+
+            .title {
+                flex: 1 0 100%;
+                order: 3;
+                text-align: center;
+            }
+        }
+
+         @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                padding: max(4px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+            }
+
+            .header {
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            .baby-icon {
+                font-size: clamp(26px, 8vh, 42px);
+            }
+
+            .title {
+                font-size: clamp(18px, 5vh, 26px);
+            }
+
+            .add-button,
+            .menu-button {
+                font-size: clamp(11px, 3vh, 15px);
+                padding: 6px 8px;
+                border-radius: 9px;
+            }
+
+            .medicine-banner,
+            .bed-banner {
+                flex-wrap: nowrap;
+                gap: 8px;
+                padding: 8px;
+                margin-bottom: 8px;
+                border-radius: 12px;
+            }
+
+            .pasta-icon,
+            .bed-icon {
+                font-size: clamp(22px, 7vh, 34px);
+            }
+
+            .medicine-text,
+            .bed-text {
+                flex: 1 1 auto;
+                font-size: clamp(13px, 3.5vh, 18px);
+                line-height: 1.05;
+            }
+
+            .medicine-time,
+            .bed-note {
+                font-size: clamp(11px, 2.8vh, 14px);
+                margin-top: 2px;
+            }
+
+            .banner-actions {
+                flex: 1 1 auto;
+                flex-wrap: nowrap;
+                gap: 6px;
+            }
+
+            .medicine-button,
+            .bed-button,
+            .banner-dismiss-button {
+                flex: 1 1 0;
+                font-size: clamp(10px, 2.8vh, 14px);
+                padding: 6px 8px;
+                border-radius: 8px;
+            }
+
+            .card {
+                margin-top: 8px;
+                padding: clamp(8px, 2vh, 18px);
+                border-radius: 16px;
+            }
+
+            .time {
+                font-size: clamp(48px, 18vh, 108px);
+                line-height: 0.88;
+            }
+
+            .fed-at {
+                font-size: clamp(16px, 4vh, 24px);
+                margin-top: 6px;
+            }
+
+            .details,
+            .amount,
+            .status {
+                font-size: clamp(15px, 4vh, 23px);
+                margin-top: 5px;
+            }
+
+            .card.yellow .status,
+            .card.red .status {
+                font-size: clamp(18px, 5vh, 30px);
+            }
+
+            .bottle-icon {
+                font-size: clamp(28px, 8vh, 48px);
+                right: 8px;
+            }
+
+            .refresh {
+                font-size: clamp(12px, 3vh, 18px);
+                margin-top: 8px;
+            }
+
+            .current-time {
+                font-size: clamp(28px, 10vh, 54px);
+                margin-top: 2px;
+            }
+        }
+
+        /* Device-aware typography: scale from the caller viewport. */
+        .title {
+            font-size: clamp(18px, 4vw, 32px);
+        }
+
+        .medicine-text,
+        .bed-text {
+            font-size: clamp(14px, 2.5vw, 24px);
+        }
+
+        .medicine-time,
+        .bed-note {
+            font-size: clamp(12px, 1.9vw, 18px);
+        }
+
+        .medicine-button,
+        .bed-button,
+        .banner-dismiss-button {
+            font-size: clamp(12px, 1.9vw, 18px);
+        }
+
+        .time {
+            font-size: clamp(56px, 18vw, 230px);
+        }
+
+        .fed-at {
+            font-size: clamp(18px, 2.8vw, 34px);
+        }
+
+        .details,
+        .amount,
+        .status {
+            font-size: clamp(16px, 2.5vw, 30px);
+        }
+
+        .current-time {
+            font-size: clamp(32px, 9vw, 115px);
+        }
+
+         @media (orientation: landscape) and (max-height: 600px) {
+            .title {
+                font-size: clamp(18px, 5vh, 26px);
+            }
+
+            .medicine-text,
+            .bed-text {
+                font-size: clamp(13px, 3.5vh, 18px);
+            }
+
+            .medicine-time,
+            .bed-note {
+                font-size: clamp(11px, 2.8vh, 14px);
+            }
+
+            .medicine-button,
+            .bed-button,
+            .banner-dismiss-button {
+                font-size: clamp(10px, 2.8vh, 14px);
+            }
+
+            .time {
+                font-size: clamp(48px, 18vh, 108px);
+            }
+
+            .fed-at {
+                font-size: clamp(16px, 4vh, 24px);
+            }
+
+            .details,
+            .amount,
+            .status {
+                font-size: clamp(15px, 4vh, 23px);
+            }
+
+            .current-time {
+                font-size: clamp(28px, 10vh, 54px);
+            }
+        }
+
+         @media (orientation: landscape) and (max-height: 600px) {
+            html,
+            body {
+                height: 100%;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            body {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .header,
+            .medicine-banner,
+            .bed-banner,
+            .card {
+                flex: 0 0 auto;
+            }
+
+            .refresh,
+            .current-time {
+                display: none;
+            }
+
+            .card {
+                margin-top: 4px;
+                padding: 6px 12px;
+            }
+
+            .time {
+                font-size: clamp(42px, 14vh, 82px);
+            }
+
+            .fed-at {
+                margin-top: 2px;
+            }
+
+            .details,
+            .amount,
+            .status {
+                margin-top: 2px;
+            }
+        }
+
+        /* Prevent intrinsic text/button widths from expanding the phone viewport. */
+        html {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        body,
+        .header,
+        .header-left,
+        .header-actions,
+        .medicine-banner,
+        .bed-banner,
+        .banner-actions,
+        .card {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .add-button,
+        .menu-button,
+        .medicine-button,
+        .bed-button,
+        .banner-dismiss-button {
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+         @media (max-width: 900px) and (orientation: portrait) {
+            .header {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 6px;
+            }
+
+            .header-left {
+                grid-column: 1;
+                grid-row: 1;
+            }
+
+            .header-actions {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
+            }
+
+            .title {
+                grid-column: 2;
+                grid-row: 1;
+                width: 100%;
+                text-align: right;
+            }
+
+            .medicine-banner,
+            .bed-banner {
+                width: 100%;
+            }
+        }
+
+         @media (max-width: 900px) and (orientation: landscape) {
+            .header {
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 6px;
+            }
+
+            .header-left {
+                grid-column: 1;
+                grid-row: 1;
+            }
+
+            .title {
+                grid-column: 2;
+                grid-row: 1;
+                width: 100%;
+                text-align: left;
+            }
+
+            .header-actions {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
+            }
+        }
+
+         @media (min-width: 901px) {
+            .medicine-button,
+            .bed-button,
+            .banner-dismiss-button {
+                width: auto;
+            }
+        }
+
+        /* Tablet-safe sizing for landscape devices wider than the phone breakpoint. */
+         @media (max-width: 1200px) {
+            .header {
+                grid-template-columns: auto minmax(0, 1fr) auto;
+            }
+
+            .title {
+                font-size: clamp(20px, 3vw, 30px);
+            }
+
+            .add-button,
+            .menu-button {
+                font-size: clamp(14px, 1.8vw, 18px);
+                padding: 9px 11px;
+            }
+
+            .card {
+                width: 100%;
+                padding: clamp(14px, 3vw, 30px);
+            }
+
+            .time {
+                font-size: clamp(72px, 18vw, 180px);
+            }
+
+            .current-time {
+                font-size: clamp(40px, 8vw, 90px);
+            }
+        }
+
+         @media (min-width: 901px) and (max-width: 1200px) and (orientation: landscape) {
+            .header {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .baby-icon {
+                font-size: clamp(36px, 7vh, 52px);
+            }
+
+            .title {
+                font-size: clamp(20px, 4vh, 30px);
+            }
+
+            .medicine-banner,
+            .bed-banner {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+
+            .medicine-text,
+            .bed-text {
+                font-size: clamp(16px, 3vh, 22px);
+            }
+
+            .medicine-time,
+            .bed-note {
+                font-size: clamp(12px, 2.5vh, 16px);
+            }
+
+            .medicine-button,
+            .bed-button,
+            .banner-dismiss-button {
+                font-size: clamp(12px, 2.5vh, 16px);
+                padding: 8px 10px;
+            }
+
+            .card {
+                margin-top: 8px;
+                padding: 12px 18px;
+            }
+
+            .time {
+                font-size: clamp(64px, 18vh, 150px);
+            }
+
+            .fed-at {
+                font-size: clamp(18px, 3vh, 28px);
+                margin-top: 6px;
+            }
+
+            .details,
+            .amount,
+            .status {
+                font-size: clamp(16px, 3vh, 26px);
+                margin-top: 5px;
+            }
+
+            .current-time {
+                font-size: clamp(36px, 8vh, 72px);
+            }
+        }
+
+        /* Compact one-line header for phones and tablets. */
+         @media (max-width: 1200px) {
+            .header {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 4px;
+                width: 100%;
+            }
+
+            .header-left {
+                display: none;
+            }
+
+            .title {
+                grid-column: 1;
+                grid-row: 1;
+                min-width: 0;
+                width: 100%;
+                text-align: left;
+                font-size: clamp(14px, 3vw, 26px);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .header-actions {
+                grid-column: 2;
+                grid-row: 1;
+                display: flex;
+                width: auto;
+                min-width: 0;
+                gap: 4px;
+                flex-wrap: nowrap;
+            }
+
+            .header-actions .add-button,
+            .header-actions .menu-button {
+                width: auto;
+                min-width: 0;
+                flex: 0 1 auto;
+                font-size: clamp(10px, 1.8vw, 16px);
+                line-height: 1.1;
+                padding: 6px 7px;
+                border-radius: 8px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 600px) {
+            .current-time {
+                display: block;
+                margin-top: 2px;
+                font-size: clamp(20px, 6vh, 42px);
+                line-height: 1;
+            }
+
+            .refresh {
+                display: none;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .title::before {
+                content: "👶 ";
+            }
+        }
+
+        .bed-banner {
+            position: relative;
+            padding-right: 78px;
+        }
+
+        .bed-icon {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            pointer-events: none;
+            opacity: 0.45;
+        }
+
+        @media (max-width: 1200px) {
+            .bed-banner {
+                padding-right: 58px;
+            }
+
+            .bed-icon {
+                right: 10px;
+                font-size: clamp(24px, 7vw, 38px);
+            }
+        }
+        #page-content {
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .banner-actions .medicine-button,
+        .banner-actions .bed-button,
+        .banner-actions .banner-dismiss-button {
+            width: auto;
+            flex: 0 1 auto;
+        }
+
+        .card {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .banner-actions .medicine-button,
+        .banner-actions .bed-button,
+        .banner-actions .banner-dismiss-button {
+            padding: 5px 7px;
+            font-size: clamp(11px, 1.5vw, 16px);
+            line-height: 1.05;
+        }
+
+        .current-time + .refresh {
+            margin-top: 2px;
+            font-size: clamp(11px, 2vw, 18px);
+        }
+
+        @media (orientation: landscape) and (max-height: 600px) {
+            .refresh {
+                display: block;
+                margin-top: 2px;
+                font-size: clamp(10px, 2.5vh, 14px);
+            }
+        }
+        .banner-actions .medicine-button,
+        .banner-actions .bed-button,
+        .banner-actions .banner-dismiss-button {
+            display: inline-flex;
+            width: auto;
+            max-width: 100%;
+            flex: 0 1 auto;
+            white-space: nowrap;
+        }
+
+        .banner-actions {
+            align-items: center;
+        }
+        @media (min-width: 1000px) and (max-width: 1300px) and (orientation: landscape) and (max-height: 850px) {
+            body {
+                padding: 8px;
+            }
+
+            .header {
+                grid-template-columns: auto minmax(0, 1fr) auto;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+
+            .header-left {
+                display: flex;
+                gap: 6px;
+            }
+
+            .baby-icon {
+                font-size: 42px;
+            }
+
+            .title {
+                font-size: clamp(20px, 3.2vh, 28px);
+                text-align: center;
+            }
+
+            .title::before {
+                content: none;
+            }
+
+            .header-actions {
+                display: flex;
+                width: auto;
+                gap: 6px;
+                flex-wrap: nowrap;
+            }
+
+            .header-actions .add-button,
+            .header-actions .menu-button {
+                width: auto;
+                font-size: clamp(12px, 2.2vh, 16px);
+                padding: 7px 9px;
+            }
+
+            .medicine-banner,
+            .bed-banner {
+                gap: 10px;
+                padding: 10px;
+                margin-bottom: 8px;
+            }
+
+            .medicine-text,
+            .bed-text {
+                font-size: clamp(16px, 2.8vh, 22px);
+            }
+
+            .medicine-time,
+            .bed-note {
+                font-size: clamp(12px, 2.2vh, 16px);
+            }
+
+            .banner-actions .medicine-button,
+            .banner-actions .bed-button,
+            .banner-actions .banner-dismiss-button {
+                font-size: clamp(11px, 2vh, 15px);
+                padding: 5px 7px;
+            }
+
+            .medicine-banner,
+            .bed-banner,
+            .card {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .card {
+                margin-top: 6px;
+                padding: 10px 16px;
+            }
+
+            .time {
+                font-size: clamp(64px, 15vh, 130px);
+            }
+
+            .fed-at {
+                font-size: clamp(18px, 2.8vh, 26px);
+                margin-top: 4px;
+            }
+
+            .details,
+            .amount,
+            .status {
+                font-size: clamp(16px, 2.8vh, 24px);
+                margin-top: 3px;
+            }
+
+            .current-time {
+                font-size: clamp(32px, 6vh, 52px);
+            }
+
+            .refresh {
+                font-size: clamp(11px, 2vh, 14px);
+                margin-top: 2px;
+            }
+        }
+        @media (min-width: 1000px) and (max-width: 1300px) and (orientation: landscape) and (max-height: 850px) {
+            .card {
+                min-height: clamp(280px, 42vh, 380px);
+                margin: 8px auto;
+                padding: 22px 18px;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .card .time,
+            .card .fed-at,
+            .card .feeding-meta,
+            .card .status {
+                text-align: center;
+            }
+
+            .card .bottle-icon {
+                top: 50%;
+                right: 22px;
+                transform: translateY(-50%);
+            }
+        }
+        .landscape-tablet #page-content .card {
+            min-height: clamp(280px, 42vh, 380px);
+            margin: 8px auto;
+            padding: 22px 18px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .landscape-tablet #page-content .card .time,
+        .landscape-tablet #page-content .card .fed-at,
+        .landscape-tablet #page-content .card .feeding-meta,
+        .landscape-tablet #page-content .card .status {
+            text-align: center;
+        }
+
+        .landscape-tablet #page-content .card .bottle-icon {
+            top: 50%;
+            right: 22px;
+            transform: translateY(-50%);
+        }
+        @media (orientation: landscape) {
+            .medicine-banner,
+            .bed-banner {
+                position: relative;
+                display: grid !important;
+                grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+                align-items: center;
+                gap: 10px;
+                padding-right: 72px;
+            }
+
+            .medicine-banner .banner-actions,
+            .bed-banner .banner-actions {
+                display: contents;
+            }
+
+            .medicine-banner .medicine-text,
+            .bed-banner .bed-text {
+                grid-column: 2;
+                grid-row: 1;
+                min-width: 0;
+                text-align: center;
+            }
+
+            .medicine-banner .medicine-button,
+            .bed-banner .bed-button {
+                grid-column: 1;
+                grid-row: 1;
+                justify-self: center;
+                width: auto;
+            }
+
+            .medicine-banner .banner-dismiss-button,
+            .bed-banner .banner-dismiss-button {
+                grid-column: 3;
+                grid-row: 1;
+                justify-self: center;
+                width: auto;
+            }
+
+            .medicine-banner .pasta-icon,
+            .bed-banner .bed-icon {
+                position: absolute;
+                top: 50%;
+                right: 20px;
+                transform: translateY(-50%);
+                pointer-events: none;
+                opacity: 0.45;
+            }
+        }
+        .medicine-banner {
+            background: linear-gradient(135deg, #123047 0%, #0b1d2d 100%);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), inset 0 0 16px rgba(0, 170, 255, 0.08);
+        }
+
+        .bed-banner {
+            background: linear-gradient(135deg, #203d2d 0%, #12271c 100%);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), inset 0 0 16px rgba(91, 224, 139, 0.08);
+        }
+        .medicine-banner {
+            box-shadow: 0 0 20px rgba(0, 170, 255, 0.42), inset 0 0 18px rgba(0, 190, 255, 0.14);
+        }
+
+        .bed-banner {
+            box-shadow: 0 0 20px rgba(91, 224, 139, 0.38), inset 0 0 18px rgba(91, 224, 139, 0.14);
+        }
+        .medicine-banner .medicine-text,
+        .bed-banner .bed-text {
+            font-size: clamp(18px, 3vw, 28px);
+        }
+
+        .medicine-banner .medicine-time,
+        .bed-banner .bed-note {
+            font-size: clamp(13px, 2.2vw, 19px);
+        }
+        .current-time {
+            font-size: clamp(40px, 10vw, 130px);
+        }
+
+        @media (orientation: landscape) and (max-height: 850px) {
+            .current-time {
+                font-size: clamp(38px, 8vh, 80px);
+            }
+        }
+        .current-time {
+            font-size: clamp(34px, 10.5vw, 140px);
+        }
+
+        @media (orientation: landscape) and (max-height: 850px) {
+            .current-time {
+                font-size: clamp(38px, 9vh, 75px);
+            }
+        }
+        @media (orientation: landscape) {
+            .current-time {
+                font-size: clamp(52px, 13vh, 110px) !important;
+            }
+        }
+        @media (orientation: landscape) {
+            .card .time {
+                font-size: clamp(86px, 22vh, 200px) !important;
+            }
+        }
+        .baby-icon,
+        .card .bottle-icon,
+        .medicine-banner .pasta-icon,
+        .bed-banner .bed-icon {
+            opacity: 1;
+        }
+
+        body.night-mode .baby-icon,
+        body.night-mode .card .bottle-icon,
+        body.night-mode .medicine-banner .pasta-icon,
+        body.night-mode .bed-banner .bed-icon {
+            opacity: 0.6;
+        }
+        @media (max-width: 1200px) {
+            body.night-mode .title::after {
+                content: "  •  NIGHT MODE";
+                color: #ffd98a;
+                font-size: 0.55em;
+                letter-spacing: 0.04em;
+                white-space: nowrap;
+            }
+        }
+        body.night-mode .feeding-meta .amount {
+            opacity: 1;
+        }
+        .banner-actions .medicine-button,
+        .banner-actions .bed-button,
+        .banner-actions .banner-dismiss-button {
+            padding: 8px 11px;
+            font-size: clamp(12px, 1.8vw, 18px);
+        }
         </style>
     </head>
     <body>
-        <div class="header">
-            <div class="header-left">
-                <div class="baby-icon">👶</div>
-                <div class="night-mode-badge">Night mode active</div>
-            </div>
-            <div class="title">Spaghetti's Last Feeding</div>
-            <div class="header-actions">
-                <button class="menu-button" onclick="openManualEntryModal()">📝 Manual Entry</button>
-                <button class="add-button" onclick="openBottleModal()">🍼 Add Bottle Feeding</button>
-            </div>
-        </div>
-        {% if show_medicine_banner %}
-            <div id="medicine-banner" class="medicine-banner" style="display: flex;">
-                <div class="pasta-icon">🍝</div>
-                <div class="medicine-text">
-                    REFLUX MEDICINE
-                    <span class="medicine-time">9:00 PM - 11:00 PM</span>
+        <main id="page-content">
+            <div class="header">
+                <div class="header-left">
+                    <div class="baby-icon">👶</div>
+                    <div class="night-mode-badge">Night mode active</div>
                 </div>
-                <form id="medicine-form" method="post" class="banner-actions">
-                    {% csrf_token %}
-                    <button type="submit" name="action" value="medicine" class="medicine-button">Spaghetti took the sauce!</button>
-                    <button type="submit"
-                            name="action"
-                            value="dismiss_medicine"
-                            class="banner-dismiss-button">Dismiss for tonight</button>
-                </form>
-            </div>
-        {% endif %}
-        {% if show_bed_banner and feeding %}
-            <div id="bed-banner" class="bed-banner" style="display: flex;">
-                <div class="bed-icon">🛏️</div>
-                <div class="bed-text">
-                    Put down the Spaghetti!
-                    <span class="bed-note">If she's awake, bed practice is on the menu.</span>
+                <div class="title">{{ child.first_name }}'s Last Feeding</div>
+                <div class="header-actions">
+                    <button class="menu-button" onclick="openManualEntryModal()">📝 Manual Entry</button>
+                    <button class="add-button" onclick="openBottleModal()">🍼 Add Bottle Feeding</button>
                 </div>
-                <form id="bed-form" method="post" class="banner-actions">
-                    {% csrf_token %}
-                    <input type="hidden" name="feeding_id" value="{{ feeding.id }}">
-                    <button type="submit" name="action" value="lay_down" class="bed-button">Spaghetti is tucked in!</button>
-                    <button type="submit"
-                            name="action"
-                            value="dismiss_bed"
-                            class="banner-dismiss-button">Dismiss until next feeding</button>
-                </form>
             </div>
-        {% endif %}
-        {% if feeding %}
-            <div class="card {{ alert_level }}{% if should_blink_alert %} blinking{% endif %}">
-                <div class="bottle-icon">🍼</div>
-                <div class="time">{{ hours }}h {{ minutes }}m</div>
-                <div class="fed-at">Fed at {{ feeding.start|date:"g:i A" }}</div>
-                <div class="feeding-meta details">
-                    <span>{{ feeding.method|title }}, {{ feeding.type|title }}</span>
-                    {% if feeding.amount %}
-                        <span class="feeding-meta-separator">•</span>
-                        <span class="amount">{{ feeding.amount }} oz</span>
+            {% if show_medicine_banner %}
+                <div id="medicine-banner" class="medicine-banner" style="display: flex;">
+                    <div class="pasta-icon">🍝</div>
+                    <div class="medicine-text">
+                        {{ child.first_name|upper }}'S REFLUX MEDICINE
+                        <span class="medicine-time">{{ medicine_window_start|date:"g:i A" }} - {{ medicine_window_end|date:"g:i A" }}</span>
+                    </div>
+                    <form id="medicine-form" method="post" class="banner-actions">
+                        {% csrf_token %}
+                        <button type="submit" name="action" value="medicine" class="medicine-button">
+                            {{ child.first_name }} took the sauce!
+                        </button>
+                        <button type="submit"
+                                name="action"
+                                value="dismiss_medicine"
+                                class="banner-dismiss-button">Dismiss for tonight</button>
+                    </form>
+                </div>
+            {% endif %}
+            {% if show_bed_banner and feeding %}
+                <div id="bed-banner" class="bed-banner" style="display: flex;">
+                    <div class="bed-icon">🛏️</div>
+                    <div class="bed-text">
+                        Put down the {{ child.first_name }}!
+                        <span class="bed-note">If {{ child.first_name }} is awake, bed practice is on the menu.</span>
+                    </div>
+                    <form id="bed-form" method="post" class="banner-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="feeding_id" value="{{ feeding.id }}">
+                        <button type="submit" name="action" value="lay_down" class="bed-button">{{ child.first_name }} is tucked in!</button>
+                        <button type="submit"
+                                name="action"
+                                value="dismiss_bed"
+                                class="banner-dismiss-button">Dismiss until next feeding</button>
+                    </form>
+                </div>
+            {% endif %}
+            {% if feeding %}
+                <div class="card {{ alert_level }}{% if should_blink_alert %} blinking{% endif %}">
+                    <div class="bottle-icon">🍼</div>
+                    <div class="time" data-feeding-start="{{ feeding.start|date:"c" }}">{{ hours }}h {{ minutes }}m</div>
+                    <div class="fed-at">Fed at {{ feeding.start|date:"g:i A" }}</div>
+                    <div class="feeding-meta details">
+                        <span>{{ feeding.method|title }}, {{ feeding.type|title }}</span>
+                        {% if feeding.amount %}
+                            <span class="feeding-meta-separator">•</span>
+                            <span class="amount">{{ feeding.amount }} oz</span>
+                        {% endif %}
+                    </div>
+                    {% if alert_level == "yellow" %}
+                        <div class="status">FEED SOON</div>
+                    {% elif alert_level == "red" %}
+                        <div class="status">FEED NOW</div>
                     {% endif %}
                 </div>
-                {% if alert_level == "yellow" %}
-                    <div class="status">FEED SOON</div>
-                {% elif alert_level == "red" %}
-                    <div class="status">FEED NOW</div>
-                {% endif %}
-            </div>
-        {% else %}
-            <div class="card">
-                <div class="time">No feedings yet</div>
-            </div>
-        {% endif %}
-        <div class="refresh">🔄 Refreshes every 1 minute</div>
-        <div id="current-time" class="current-time" aria-live="polite"></div>
+            {% else %}
+                <div class="card">
+                    <div class="time">No feedings yet</div>
+                </div>
+            {% endif %}
+            <div id="current-time" class="current-time" aria-live="polite"></div>
+            <div class="refresh">🔄 Refreshes every 1 minute</div>
+        </main>
         <div id="manual-entry-modal" class="modal">
             <div class="modal-content">
                 <div>
