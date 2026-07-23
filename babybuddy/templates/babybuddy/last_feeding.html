@@ -1894,6 +1894,14 @@
             padding: 8px 11px;
             font-size: clamp(12px, 1.8vw, 18px);
         }
+        body.night-mode::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.18);
+        }
         </style>
     </head>
     <body>
