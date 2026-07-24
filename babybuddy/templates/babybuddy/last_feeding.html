@@ -35,7 +35,7 @@
             }
 
             const hour = new Date().getHours();
-            const isNightMode = hour >= 22 || hour < 9;
+            const isNightMode = hour >= 22 || hour < 8;
             document.body.classList.toggle("night-mode", isNightMode);
         }
 
@@ -1900,10 +1900,12 @@
             inset: 0;
             z-index: 9998;
             pointer-events: none;
-            background: rgba(0, 0, 0, 0.40);
+            background: #000;
         }
         body.night-mode .card .time,
         body.night-mode .current-time {
+            position: relative;
+            z-index: 9999;
             opacity: 0.82;
             filter: brightness(1.45);
         }
