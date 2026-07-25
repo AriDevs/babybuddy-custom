@@ -1894,13 +1894,16 @@
             padding: 8px 11px;
             font-size: clamp(12px, 1.8vw, 18px);
         }
-        body.night-mode::after {
-            content: "";
-            position: fixed;
-            inset: 0;
-            z-index: 9998;
-            pointer-events: none;
+        body.night-mode {
             background: #000;
+        }
+
+        body.night-mode::after {
+            display: none;
+        }
+
+        body.night-mode #page-content > * {
+            visibility: hidden;
         }
         body.night-mode .card .time,
         body.night-mode .current-time {
@@ -1908,6 +1911,7 @@
             z-index: 9999;
             opacity: 0.82;
             filter: brightness(1.45);
+            visibility: visible;
         }
         </style>
     </head>
