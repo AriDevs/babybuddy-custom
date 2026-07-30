@@ -45,6 +45,16 @@ urlpatterns = [
     ),
     path("feedings/", views.FeedingList.as_view(), name="feeding-list"),
     path("medicine/", views.MedicineEventList.as_view(), name="medicineevent-list"),
+    path(
+        "medicine/<int:pk>/",
+        views.MedicineEventUpdate.as_view(),
+        name="medicineevent-update",
+    ),
+    path(
+        "medicine/<int:pk>/delete/",
+        views.MedicineEventDelete.as_view(),
+        name="medicineevent-delete",
+    ),
     path("feedings/add/", views.FeedingAdd.as_view(), name="feeding-add"),
     path("feedings/<int:pk>/", views.FeedingUpdate.as_view(), name="feeding-update"),
     path(
@@ -58,6 +68,16 @@ urlpatterns = [
     path("notes/<int:pk>/delete/", views.NoteDelete.as_view(), name="note-delete"),
     path("sleep/", views.SleepList.as_view(), name="sleep-list"),
     path("lay-down/", views.LayDownEventList.as_view(), name="laydownevent-list"),
+    path(
+        "lay-down/<int:pk>/",
+        views.LayDownEventUpdate.as_view(),
+        name="laydownevent-update",
+    ),
+    path(
+        "lay-down/<int:pk>/delete/",
+        views.LayDownEventDelete.as_view(),
+        name="laydownevent-delete",
+    ),
     path("sleep/add/", views.SleepAdd.as_view(), name="sleep-add"),
     path("sleep/<int:pk>/", views.SleepUpdate.as_view(), name="sleep-update"),
     path("sleep/<int:pk>/delete/", views.SleepDelete.as_view(), name="sleep-delete"),

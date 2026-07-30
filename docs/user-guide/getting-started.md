@@ -28,6 +28,8 @@ an overview of all elements related to your child, including:
 
 Select the title of any of the cards to see more details.
 
+The Last Medicine and Last Lay Down card titles open their respective event history pages. These histories use the standard Baby Buddy table layout and provide edit and delete actions when the signed-in user has the required permissions.
+
 ## Timeline
 
 ![Baby Buddy child timeline](../assets/images/timeline.png)

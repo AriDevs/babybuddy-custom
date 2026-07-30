@@ -194,6 +194,19 @@ class MedicineEventList(
     filterset_class = filters.MedicineEventFilter
 
 
+class MedicineEventUpdate(CoreUpdateView):
+    model = models.MedicineEvent
+    permission_required = ("core.change_medicineevent",)
+    form_class = forms.MedicineEventForm
+    success_url = reverse_lazy("core:medicineevent-list")
+
+
+class MedicineEventDelete(CoreDeleteView):
+    model = models.MedicineEvent
+    permission_required = ("core.delete_medicineevent",)
+    success_url = reverse_lazy("core:medicineevent-list")
+
+
 class FeedingAdd(CoreAddView):
     model = models.Feeding
     permission_required = ("core.add_feeding",)
@@ -350,6 +363,19 @@ class LayDownEventList(
     template_name = "core/laydownevent_list.html"
     permission_required = ("core.view_laydownevent",)
     filterset_class = filters.LayDownEventFilter
+
+
+class LayDownEventUpdate(CoreUpdateView):
+    model = models.LayDownEvent
+    permission_required = ("core.change_laydownevent",)
+    form_class = forms.LayDownEventForm
+    success_url = reverse_lazy("core:laydownevent-list")
+
+
+class LayDownEventDelete(CoreDeleteView):
+    model = models.LayDownEvent
+    permission_required = ("core.delete_laydownevent",)
+    success_url = reverse_lazy("core:laydownevent-list")
 
 
 class SleepAdd(CoreAddView):

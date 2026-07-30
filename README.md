@@ -26,6 +26,8 @@ This fork includes local workflow changes on top of upstream Baby Buddy:
 - One-tap bottle feeding logging from the custom last-feeding screen
 - New persisted `MedicineEvent` and `LayDownEvent` activity models with migration `core.0036_medicineevent_laydownevent`
 - Dashboard cards for “Last Medicine” and “Last Lay Down” shown beneath the feeding section on the child dashboard
+- Tapping the Last Medicine or Last Lay Down card title opens a paginated event history
+- Medicine and Lay Down history entries can be edited or deleted according to user permissions
 - Medicine card styling and icon alias using the existing temperature glyph as the closest built-in medicine icon
 - Focused Django test coverage for the custom last-feeding actions and dashboard card template tags
 

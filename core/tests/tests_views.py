@@ -87,6 +87,52 @@ class ViewsTestCase(TestCase):
         page = self.c.get("/feedings/{}/delete/".format(entry.id))
         self.assertEqual(page.status_code, 200)
 
+    def test_medicine_and_laydown_event_views(self):
+        child = models.Child.objects.first()
+        event_time = timezone.localtime().replace(microsecond=0)
+        medicine = models.MedicineEvent.objects.create(
+            child=child, time=event_time, notes="Original medicine note"
+        )
+        lay_down = models.LayDownEvent.objects.create(
+            child=child, time=event_time, notes="Original lay down note"
+        )
+
+        medicine_page = self.c.get("/medicine/")
+        self.assertEqual(medicine_page.status_code, 200)
+        self.assertContains(medicine_page, "/medicine/{}/".format(medicine.id))
+        self.assertContains(medicine_page, "/medicine/{}/delete/".format(medicine.id))
+
+        lay_down_page = self.c.get("/lay-down/")
+        self.assertEqual(lay_down_page.status_code, 200)
+        self.assertContains(lay_down_page, "/lay-down/{}/".format(lay_down.id))
+        self.assertContains(lay_down_page, "/lay-down/{}/delete/".format(lay_down.id))
+
+        update_data = {
+            "child": child.id,
+            "time": event_time.isoformat(timespec="seconds"),
+            "notes": "Updated event note",
+        }
+        response = self.c.post("/medicine/{}/".format(medicine.id), update_data)
+        self.assertRedirects(response, "/medicine/")
+        medicine.refresh_from_db()
+        self.assertEqual(medicine.notes, "Updated event note")
+
+        response = self.c.post(
+            "/lay-down/{}/".format(lay_down.id),
+            {**update_data, "notes": "Updated lay down note"},
+        )
+        self.assertRedirects(response, "/lay-down/")
+        lay_down.refresh_from_db()
+        self.assertEqual(lay_down.notes, "Updated lay down note")
+
+        response = self.c.post("/medicine/{}/delete/".format(medicine.id))
+        self.assertRedirects(response, "/medicine/")
+        self.assertFalse(models.MedicineEvent.objects.filter(id=medicine.id).exists())
+
+        response = self.c.post("/lay-down/{}/delete/".format(lay_down.id))
+        self.assertRedirects(response, "/lay-down/")
+        self.assertFalse(models.LayDownEvent.objects.filter(id=lay_down.id).exists())
+
     def test_headcircumference_views(self):
         page = self.c.get("/head-circumference/")
         self.assertEqual(page.status_code, 200)

@@ -410,6 +410,28 @@ class NoteForm(CoreModelForm, TaggableModelForm):
         }
 
 
+class MedicineEventForm(CoreModelForm):
+    class Meta:
+        model = models.MedicineEvent
+        fields = ["child", "time", "notes"]
+        widgets = {
+            "child": ChildRadioSelect,
+            "time": DateTimeInput(),
+            "notes": forms.Textarea(attrs={"rows": 5}),
+        }
+
+
+class LayDownEventForm(CoreModelForm):
+    class Meta:
+        model = models.LayDownEvent
+        fields = ["child", "time", "notes"]
+        widgets = {
+            "child": ChildRadioSelect,
+            "time": DateTimeInput(),
+            "notes": forms.Textarea(attrs={"rows": 5}),
+        }
+
+
 class SleepForm(CoreModelForm, TaggableModelForm):
     fieldsets = [
         {
