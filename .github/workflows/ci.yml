@@ -39,6 +39,8 @@ jobs:
   deploy-docs:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     environment:
       name: documentation
       url: https://docs.baby-buddy.net
@@ -55,5 +57,5 @@ jobs:
         if: steps.changed-files.outputs.any_changed == 'true'
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
+          GITHUB_TOKEN: ${{ github.token }}
           REQUIREMENTS: docs/requirements.txt
