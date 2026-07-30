@@ -185,6 +185,15 @@ class FeedingList(PermissionRequiredMixin, BabyBuddyPaginatedView, BabyBuddyFilt
     filterset_class = filters.FeedingFilter
 
 
+class MedicineEventList(
+    PermissionRequiredMixin, BabyBuddyPaginatedView, BabyBuddyFilterView
+):
+    model = models.MedicineEvent
+    template_name = "core/medicineevent_list.html"
+    permission_required = ("core.view_medicineevent",)
+    filterset_class = filters.MedicineEventFilter
+
+
 class FeedingAdd(CoreAddView):
     model = models.Feeding
     permission_required = ("core.add_feeding",)
@@ -332,6 +341,15 @@ class SleepList(PermissionRequiredMixin, BabyBuddyPaginatedView, BabyBuddyFilter
     template_name = "core/sleep_list.html"
     permission_required = ("core.view_sleep",)
     filterset_class = filters.SleepFilter
+
+
+class LayDownEventList(
+    PermissionRequiredMixin, BabyBuddyPaginatedView, BabyBuddyFilterView
+):
+    model = models.LayDownEvent
+    template_name = "core/laydownevent_list.html"
+    permission_required = ("core.view_laydownevent",)
+    filterset_class = filters.LayDownEventFilter
 
 
 class SleepAdd(CoreAddView):

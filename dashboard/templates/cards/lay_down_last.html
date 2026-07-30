@@ -1,7 +1,7 @@
 {% extends 'cards/base.html' %}
 {% load duration i18n %}
 {% block header %}
-    {% trans "Last Lay Down" %}
+    <a href="{% url "core:laydownevent-list" %}">{% trans "Last Lay Down" %}</a>
 {% endblock %}
 {% block title %}
     {% if lay_down_event %}
@@ -22,17 +22,5 @@
             <br>
             {{ lay_down_event.notes }}
         {% endif %}
-        <div class="mt-2">
-            <small class="text-muted">{% trans "Recent history" %}</small>
-            <ul class="list-unstyled mb-0">
-                {% for event in lay_down_events %}
-                    <li>
-                        <small>{{ event.time|date:"M j, g:i A" }}
-                            {% if event.notes %}— {{ event.notes }}{% endif %}
-                        </small>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
     {% endif %}
 {% endblock %}

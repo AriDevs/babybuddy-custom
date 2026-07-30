@@ -44,6 +44,7 @@ urlpatterns = [
         name="bottle-feeding-add",
     ),
     path("feedings/", views.FeedingList.as_view(), name="feeding-list"),
+    path("medicine/", views.MedicineEventList.as_view(), name="medicineevent-list"),
     path("feedings/add/", views.FeedingAdd.as_view(), name="feeding-add"),
     path("feedings/<int:pk>/", views.FeedingUpdate.as_view(), name="feeding-update"),
     path(
@@ -56,6 +57,7 @@ urlpatterns = [
     path("notes/<int:pk>/", views.NoteUpdate.as_view(), name="note-update"),
     path("notes/<int:pk>/delete/", views.NoteDelete.as_view(), name="note-delete"),
     path("sleep/", views.SleepList.as_view(), name="sleep-list"),
+    path("lay-down/", views.LayDownEventList.as_view(), name="laydownevent-list"),
     path("sleep/add/", views.SleepAdd.as_view(), name="sleep-add"),
     path("sleep/<int:pk>/", views.SleepUpdate.as_view(), name="sleep-update"),
     path("sleep/<int:pk>/delete/", views.SleepDelete.as_view(), name="sleep-delete"),

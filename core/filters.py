@@ -6,6 +6,12 @@ import django_filters
 from core import models
 
 
+class LayDownEventFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.LayDownEvent
+        fields = ["child"]
+
+
 class TagFilter(django_filters.FilterSet):
     tag = django_filters.ModelChoiceFilter(
         label=_("Tag"),
@@ -31,6 +37,12 @@ class FeedingFilter(TagFilter):
     class Meta:
         model = models.Feeding
         fields = ["child", "type", "method"]
+
+
+class MedicineEventFilter(django_filters.FilterSet):
+    class Meta:
+        model = models.MedicineEvent
+        fields = ["child"]
 
 
 class HeadCircumferenceFilter(TagFilter):

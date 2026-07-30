@@ -195,7 +195,6 @@ class TemplateTagsTestCase(TestCase):
         self.assertFalse(data["empty"])
         self.assertFalse(data["hide_empty"])
         self.assertEqual(data["medicine_event"], instance)
-        self.assertEqual(data["medicine_events"], [instance])
 
     def test_card_medicine_last_empty(self):
         data = cards.card_medicine_last(self.context, self.child)
@@ -248,7 +247,6 @@ class TemplateTagsTestCase(TestCase):
         self.assertFalse(data["empty"])
         self.assertFalse(data["hide_empty"])
         self.assertEqual(data["lay_down_event"], instance)
-        self.assertEqual(data["lay_down_events"], [instance])
 
     def test_card_lay_down_last_empty(self):
         data = cards.card_lay_down_last(self.context, self.child)

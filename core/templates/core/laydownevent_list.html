@@ -1,0 +1,43 @@
+{% extends 'babybuddy/page.html' %}
+{% load datetime i18n %}
+{% block title %}
+    {% trans "Lay Down History" %}
+{% endblock %}
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active" aria-current="page">{% trans "Lay Down History" %}</li>
+{% endblock %}
+{% block content %}
+    <h1>{% trans "Lay Down History" %}</h1>
+    {% include 'babybuddy/filter.html' %}
+    <div class="table-responsive">
+        <table class="table table-instances table-borderless table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>{% trans "Time" %}</th>
+                    {% if not unique_child %}
+                        <th>{% trans "Child" %}</th>
+                    {% endif %}
+                    <th>{% trans "Notes" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in object_list %}
+                    <tr>
+                        <th scope="row">{{ event.time|datetime_short }}</th>
+                        {% if not unique_child %}
+                            <td>
+                                <a href="{% url 'core:child' event.child.slug %}">{{ event.child }}</a>
+                            </td>
+                        {% endif %}
+                        <td>{{ event.notes|default_if_none:"" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <th colspan="3">{% trans "No lay down events found." %}</th>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'babybuddy/paginator.html' %}
+{% endblock %}

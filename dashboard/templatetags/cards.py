@@ -252,18 +252,17 @@ def card_medicine_last(context, child):
     :param child: an instance of the Child model.
     :returns: a dictionary with the most recent MedicineEvent instance.
     """
-    events = list(
+    instance = (
         models.MedicineEvent.objects.filter(child=child)
         .filter(**_filter_data_age(context, "time"))
-        .order_by("-time")[:5]
+        .order_by("-time")
+        .first()
     )
-    instance = events[0] if events else None
     empty = not instance
 
     return {
         "type": "medicine",
         "medicine_event": instance,
-        "medicine_events": events,
         "empty": empty,
         "hide_empty": _hide_empty(context),
     }
@@ -346,18 +345,17 @@ def card_lay_down_last(context, child):
     :param child: an instance of the Child model.
     :returns: a dictionary with the most recent LayDownEvent instance.
     """
-    events = list(
+    instance = (
         models.LayDownEvent.objects.filter(child=child)
         .filter(**_filter_data_age(context, "time"))
-        .order_by("-time")[:5]
+        .order_by("-time")
+        .first()
     )
-    instance = events[0] if events else None
     empty = not instance
 
     return {
         "type": "sleep",
         "lay_down_event": instance,
-        "lay_down_events": events,
         "empty": empty,
         "hide_empty": _hide_empty(context),
     }
