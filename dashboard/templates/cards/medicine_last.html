@@ -22,5 +22,17 @@
             <br>
             {{ medicine_event.notes }}
         {% endif %}
+        <div class="mt-2">
+            <small class="text-muted">{% trans "Recent history" %}</small>
+            <ul class="list-unstyled mb-0">
+                {% for event in medicine_events %}
+                    <li>
+                        <small>{{ event.time|date:"M j, g:i A" }}
+                            {% if event.notes %}— {{ event.notes }}{% endif %}
+                        </small>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
 {% endblock %}
