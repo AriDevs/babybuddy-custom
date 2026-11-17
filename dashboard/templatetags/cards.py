@@ -7,6 +7,8 @@ from django.utils.translation import gettext as _
 
 import collections
 
+from babybuddy.feeding_estimate import next_feeding_estimate
+from babybuddy.feeding_totals import feeding_ounce_totals
 from core import models
 
 register = template.Library()
@@ -892,3 +894,13 @@ def card_tummytime_day(context, child, date=None):
         "empty": empty,
         "hide_empty": _hide_empty(context),
     }
+
+
+@register.inclusion_tag("cards/feeding_totals.html")
+def card_feeding_totals(child):
+    return {"type": "feeding", **feeding_ounce_totals(child)}
+
+
+@register.inclusion_tag("cards/feeding_next.html")
+def card_feeding_next(child):
+    return {"type": "feeding", **next_feeding_estimate(child)}

@@ -4,12 +4,27 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path, reverse_lazy
-from babybuddy.last_feeding_views import last_feeding_page
+from babybuddy.ha_api import ActionView, SummaryView
+from babybuddy.last_feeding_views import (
+    last_feeding_manifest,
+    last_feeding_page,
+    last_feeding_service_worker,
+)
 
 from . import views
 
 app_patterns = [
     path("last-feeding/", last_feeding_page, name="last_feeding_page"),
+    path(
+        "last-feeding/manifest.webmanifest",
+        last_feeding_manifest,
+        name="last_feeding_manifest",
+    ),
+    path(
+        "last-feeding/sw.js",
+        last_feeding_service_worker,
+        name="last_feeding_service_worker",
+    ),
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path(
@@ -51,6 +66,8 @@ app_patterns = [
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("api/ha/summary/", SummaryView.as_view(), name="ha-summary"),
+    path("api/ha/action/", ActionView.as_view(), name="ha-action"),
     path("", include("api.urls", namespace="api")),
     path("", include((app_patterns, "babybuddy"), namespace="babybuddy")),
     path("user/lang", include("django.conf.urls.i18n")),

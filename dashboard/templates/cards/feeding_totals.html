@@ -1,0 +1,28 @@
+{% extends 'cards/base.html' %}
+{% load i18n %}
+{% block header %}
+    {% trans "Feeding totals" %}
+{% endblock %}
+{% block title %}
+    {% trans "Today" %}: {{ today_ounces|floatformat:"-2" }} oz
+{% endblock %}
+{% block content %}
+    <table class="table table-sm mb-2">
+        <caption class="caption-top">{% trans "Daily ounces · past 7 days" %}</caption>
+        <thead>
+            <tr>
+                <th scope="col">{% trans "Day" %}</th>
+                <th scope="col" class="text-end">{% trans "Ounces" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for day in daily_feeding_totals %}
+                <tr>
+                    <th scope="row">{{ day.date|date:"D, M j" }}</th>
+                    <td class="text-end">{{ day.amount|floatformat:"-2" }} oz</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <small class="text-body-secondary">{% trans "Recorded milk/formula amounts · days start at local midnight" %}</small>
+{% endblock %}

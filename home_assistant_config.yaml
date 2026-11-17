@@ -1,0 +1,85 @@
+# Home Assistant side of the Baby dashboard (http://192.168.4.97:8123/baby-buddy).
+#
+# 1. In HA's secrets.yaml add one line (the token belongs to the Baby Buddy
+#    user "homeassistant"; print it on the server with:
+#      cd /opt/babybuddy && DJANGO_SETTINGS_MODULE=babybuddy.settings.development \
+#        pipenv run python manage.py drf_create_token homeassistant ):
+#
+#      baby_buddy_authorization: "Token <paste token here>"
+#
+# 2. Paste the two blocks below into configuration.yaml. If a `rest:` or
+#    `rest_command:` key already exists, merge into it instead of adding a
+#    second one (rest_command.motion_check is already there).
+#
+# 3. Developer Tools > YAML > Check configuration, then restart Home Assistant
+#    (a restart is needed the first time `rest:` is added).
+
+rest:
+  - resource: http://192.168.4.100:8000/api/ha/summary/
+    scan_interval: 60
+    timeout: 15
+    headers:
+      Authorization: !secret baby_buddy_authorization
+    sensor:
+      - name: Baby last feeding
+        unique_id: baby_buddy_last_feeding
+        device_class: timestamp
+        icon: mdi:baby-bottle
+        value_template: "{{ value_json.last_feeding_at }}"
+        json_attributes:
+          - child
+          - last_feeding_amount
+          - last_feeding_type
+          - last_feeding_method
+          - last_feeding_notes
+          - minutes_since_feeding
+          - alert_level
+      - name: Baby last feeding amount
+        unique_id: baby_buddy_last_feeding_amount
+        icon: mdi:cup-water
+        unit_of_measurement: oz
+        value_template: "{{ value_json.last_feeding_amount }}"
+      - name: Baby next feeding
+        unique_id: baby_buddy_next_feeding
+        device_class: timestamp
+        icon: mdi:clock-outline
+        value_template: "{{ value_json.next_feeding_at }}"
+        json_attributes:
+          - next_feeding_amount
+          - next_feedings
+      - name: Baby last medicine
+        unique_id: baby_buddy_last_medicine
+        device_class: timestamp
+        icon: mdi:pill
+        value_template: "{{ value_json.last_medicine_at }}"
+      - name: Baby last lay down
+        unique_id: baby_buddy_last_lay_down
+        device_class: timestamp
+        icon: mdi:bed
+        value_template: "{{ value_json.last_lay_down_at }}"
+      - name: Baby ounces today
+        unique_id: baby_buddy_ounces_today
+        icon: mdi:baby-bottle-outline
+        unit_of_measurement: oz
+        value_template: "{{ value_json.today_ounces }}"
+      - name: Baby feedings today
+        unique_id: baby_buddy_feedings_today
+        icon: mdi:counter
+        value_template: "{{ value_json.today_feedings }}"
+      - name: Baby feeding log
+        unique_id: baby_buddy_feeding_log
+        icon: mdi:format-list-bulleted
+        value_template: "{{ value_json.recent_feedings | count }}"
+        json_attributes:
+          - recent_feedings
+          - daily_totals
+
+rest_command:
+  baby_buddy_action:
+    url: http://192.168.4.100:8000/api/ha/action/
+    method: post
+    content_type: application/json
+    timeout: 15
+    headers:
+      Authorization: !secret baby_buddy_authorization
+    payload: '{{ {"action": action, "amount": amount | default(none), "notes": notes | default(""), "time": time | default(none)} | tojson }}'

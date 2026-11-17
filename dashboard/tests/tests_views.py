@@ -50,3 +50,29 @@ class ViewsTestCase(TestCase):
         )
         page = self.c.get("/dashboard/")
         self.assertEqual(page.status_code, 200)
+
+    def test_child_dashboard_feeding_totals(self):
+        from django.utils import timezone
+        from core.models import Feeding
+
+        child = Child.objects.create(
+            first_name="Arleti", last_name="Spagetti", birth_date="2024-01-01"
+        )
+        other = Child.objects.create(
+            first_name="Another", last_name="Baby", birth_date="2024-01-01"
+        )
+        now = timezone.now()
+        for owner, amount in [(child, 6.25), (other, 99)]:
+            Feeding.objects.create(
+                child=owner,
+                start=now,
+                end=now,
+                amount=amount,
+                type="formula",
+                method="bottle",
+            )
+        page = self.c.get(f"/children/{child.slug}/dashboard/")
+        self.assertContains(page, "Feeding totals")
+        self.assertContains(page, "Today: 6.25 oz")
+        self.assertNotContains(page, "All time")
+        self.assertContains(page, "Daily ounces")

@@ -1,0 +1,25 @@
+{% extends 'cards/base.html' %}
+{% load i18n tz %}
+{% block header %}
+    {% trans "Estimated next feedings" %}
+{% endblock %}
+{% block title %}
+    {% if not estimated_at %}
+        {% trans "Not enough history yet" %}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    {% if estimated_at %}
+        <ul class="list-unstyled mb-0">
+            {% for estimate in estimates %}
+                <li class="mb-2">
+                    <strong>{{ estimate.estimated_at|localtime|time:"TIME_FORMAT" }}</strong>
+                    {% if estimate.amount %}&middot; ~{{ estimate.amount|floatformat:"-1" }} oz{% endif %}
+                    {% if estimate.shortened %}
+                        <small class="text-muted">({% trans "earlier: last bottle was small" %})</small>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

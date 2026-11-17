@@ -1,9 +1,99 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta name="color-scheme" content="dark">
+        <style>
+            /* Keep the document canvas dark while the initial layout is hidden. */
+            html { background: #000; color-scheme: dark; }
+        </style>
         <title>{{ child.first_name }}'s Last Feeding</title>
         <meta name="viewport"
               content="width=device-width, initial-scale=1, viewport-fit=cover">
+        <meta name="theme-color" content="#000000">
+        <meta name="mobile-web-app-capable" content="yes">
+        <link rel="manifest" href="{% url 'babybuddy:last_feeding_manifest' %}">
+        <script>
+        /*
+         * Kiosk mode for wall/nightstand tablets.
+         * Turn on per device by opening /last-feeding/?kiosk=1 (remembered in
+         * localStorage; ?kiosk=0 turns it off) or by installing the page as an
+         * app. While on: the screen is kept awake and the first tap after each
+         * load puts the page in fullscreen. Swiping in from a screen edge
+         * leaves fullscreen as usual.
+         */
+        (function () {
+            const KEY = "lastFeedingKiosk";
+            const AWAKE_VIDEO = "data:video/mp4;base64,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AAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAtaWxzdAAAACWpdG9vAAAAHWRhdGEAAAABAAAAAExhdmY2MC4xNi4xMDAAAAAIZnJlZQAACB5tZGF03gIATGF2YzYwLjMxLjEwMgACMEAOARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAACrwYF//+r3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE2NCByMzEwOCAzMWUxOWY5IC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAyMyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTE2IGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDM6MHgxMzMgbWU9dW1oIHN1Ym1lPTEwIHBzeT0xIHBzeV9yZD0xLjAwOjAuMDAgbWl4ZWRfcmVmPTEgbWVfcmFuZ2U9MjQgY2hyb21hX21lPTEgdHJlbGxpcz0yIDh4OGRjdD0xIGNxbT0wIGRlYWR6b25lPTIxLDExIGZhc3RfcHNraXA9MSBjaHJvbWFfcXBfb2Zmc2V0PS0yIHRocmVhZHM9MSBsb29rYWhlYWRfdGhyZWFkcz0xIHNsaWNlZF90aHJlYWRzPTAgbnI9MCBkZWNpbWF0ZT0xIGludGVybGFjZWQ9MCBibHVyYXlfY29tcGF0PTAgY29uc3RyYWluZWRfaW50cmE9MCBiZnJhbWVzPTggYl9weXJhbWlkPTIgYl9hZGFwdD0yIGJfYmlhcz0wIGRpcmVjdD0zIHdlaWdodGI9MSBvcGVuX2dvcD0wIHdlaWdodHA9MiBrZXlpbnQ9MjUwIGtleWludF9taW49MSBzY2VuZWN1dD00MCBpbnRyYV9yZWZyZXNoPTAgcmNfbG9va2FoZWFkPTYwIHJjPWNyZiBtYnRyZWU9MSBjcmY9NDAuMCBxY29tcD0wLjYwIHFwbWluPTAgcXBtYXg9NjkgcXBzdGVwPTQgaXBfcmF0aW89MS40MCBhcT0xOjEuMDAAgAAAAA9liIEAA3/+9nN8CmttsYEAAAAJQZoJLYg1//7AAAAACUGeEIcQY//PgQAAAAkBnhgmiCv/1oAAAAAJAZ4YRogr/9aBAAAACQGeGGaIK//WgQAAAAkBnhitSCv/1oEAAAAJAZ4YzUgr/9aBAAAACQGeGO1IK//WgAAAAAkBnhkNSCv/1oAAAAAPQZoaSTUCAtEymBBn//7BAAAACUGeIaXEGP/PgAAAAAkBnilFogr/1oAAAAAJAZ4pZaIK/9aBAAAACQGeKYWiCv/WgQAAAAkBninMkgr/1oEAAAAJAZ4p7JIK/9aAAAAACQGeKgySCv/WgAAAAAkBnioskgr/1oEAAAAQQZorabUCAtrRMpgBBf/+wAAAAAlBnjLEsQY/z4AAAAAJAZ46ZKiCv9aBARggBwEYIAcBGCAHARggBwAAAAkBnjqEqIK/1oABGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwAAAAkBnjqkqIK/1oEBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAACQGeOuzSCv/WgQEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAACQGeOwzSCv/WgAEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAACQGeOyzSCv/WgQEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAACQGeO0zSCv/WgAEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAAEkGaO6iNQIC2trRMpgAEFf/+wQEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcAAAAJAZ5DhPIK/9aBARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAH";
+            let stored = null;
+            try {
+                const param = new URLSearchParams(window.location.search).get("kiosk");
+                if (param === "1") localStorage.setItem(KEY, "1");
+                if (param === "0") localStorage.removeItem(KEY);
+                stored = localStorage.getItem(KEY);
+            } catch (error) {
+                stored = new URLSearchParams(window.location.search).get("kiosk") === "1" ? "1" : null;
+            }
+            const installed = ["fullscreen", "standalone"].some(function (mode) {
+                return window.matchMedia("(display-mode: " + mode + ")").matches;
+            });
+            if (stored !== "1" && !installed) return;
+            document.documentElement.classList.add("kiosk");
+
+            let wakeLock = null;
+            let awakeVideo = null;
+
+            async function keepAwake(fromGesture) {
+                if (document.hidden) return;
+                if ("wakeLock" in navigator) {
+                    if (wakeLock) return;
+                    try {
+                        wakeLock = await navigator.wakeLock.request("screen");
+                        wakeLock.addEventListener("release", function () { wakeLock = null; });
+                        return;
+                    } catch (error) {
+                        wakeLock = null;
+                    }
+                }
+                // Plain-HTTP fallback: a looping silent video keeps the screen
+                // on, but the browser only lets it start from a tap.
+                if (!fromGesture) return;
+                if (!awakeVideo) {
+                    awakeVideo = document.createElement("video");
+                    awakeVideo.src = AWAKE_VIDEO;
+                    awakeVideo.loop = true;
+                    awakeVideo.playsInline = true;
+                    awakeVideo.setAttribute("aria-hidden", "true");
+                    awakeVideo.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0.01;pointer-events:none;";
+                    document.body.appendChild(awakeVideo);
+                }
+                if (awakeVideo.paused) awakeVideo.play().catch(function () {});
+            }
+
+            function enterFullscreen() {
+                // Older Android Chrome only has the webkit-prefixed API, which
+                // returns nothing instead of a promise.
+                const root = document.documentElement;
+                const request = root.requestFullscreen || root.webkitRequestFullscreen || root.webkitRequestFullScreen;
+                if (installed || !request) return;
+                if (document.fullscreenElement || document.webkitFullscreenElement) return;
+                try {
+                    const result = request.call(root);
+                    if (result && result.catch) result.catch(function () {});
+                } catch (error) {}
+            }
+
+            function onTap() {
+                enterFullscreen();
+                keepAwake(true);
+            }
+            // click and touchend count as a user gesture in every Chrome
+            // version; pointerup does not in older ones.
+            document.addEventListener("click", onTap, true);
+            document.addEventListener("touchend", onTap, true);
+            document.addEventListener("visibilitychange", function () { keepAwake(false); });
+            document.addEventListener("DOMContentLoaded", function () { keepAwake(false); });
+        })();
+        </script>
         <script>
         function updateElapsedFeedingTime() {
             const timer = document.querySelector(".time[data-feeding-start]");
@@ -13,7 +103,52 @@
 
             const feedingStart = new Date(timer.dataset.feedingStart);
             const minutesSinceFeeding = Math.max(0, Math.floor((Date.now() - feedingStart.getTime()) / 60000));
-            timer.textContent = Math.floor(minutesSinceFeeding / 60) + "h " + (minutesSinceFeeding % 60) + "m";
+            const text = Math.floor(minutesSinceFeeding / 60) + "h " + (minutesSinceFeeding % 60) + "m";
+            if (timer.textContent !== text) {
+                timer.textContent = text;
+                if (isKioskNightLayout()) fitPageToViewport();
+            }
+        }
+
+        // window.visualViewport does not exist in older Chrome (before 61).
+        function viewportSize() {
+            const viewport = window.visualViewport;
+            return {
+                width: Math.max(1, (viewport && viewport.width) || window.innerWidth || document.documentElement.clientWidth),
+                height: Math.max(1, (viewport && viewport.height) || window.innerHeight || document.documentElement.clientHeight),
+            };
+        }
+
+        function isKioskNightLayout() {
+            return document.documentElement.classList.contains("kiosk") && !!document.body && document.body.classList.contains("night-mode");
+        }
+
+        // Kiosk tablets at night show only the timer, the next-feeding line
+        // and the clock, sized to fill the screen.
+        function fitKioskNightLayout(page) {
+            const size = viewportSize();
+            const fitText = function (element, heightRatio) {
+                if (!element) return;
+                const maxWidth = size.width * 0.94;
+                let fontSize = Math.min(size.height * heightRatio, maxWidth / (0.6 * Math.max(4, element.textContent.trim().length)));
+                element.style.setProperty("font-size", fontSize + "px", "important");
+                const width = element.scrollWidth;
+                if (width > maxWidth) {
+                    fontSize = fontSize * maxWidth / width;
+                    element.style.setProperty("font-size", fontSize + "px", "important");
+                }
+            };
+            fitText(page.querySelector(".time"), 0.4);
+            fitText(page.querySelector(".current-time"), 0.28);
+            const suggestion = page.querySelector(".next-feeding-suggestion");
+            if (suggestion) {
+                const suggestionSize = Math.min(40, Math.max(16, Math.min(size.height * 0.055, size.width * 0.045)));
+                suggestion.style.setProperty("font-size", suggestionSize + "px", "important");
+            }
+            page.style.transform = "none";
+            page.style.height = "";
+            document.documentElement.style.setProperty("--page-scale", 1);
+            document.body.classList.add("layout-ready");
         }
 
         function updateCurrentTime() {
@@ -22,11 +157,12 @@
                 return;
             }
 
-            currentTime.textContent = new Intl.DateTimeFormat("en-US", {
+            const text = new Intl.DateTimeFormat("en-US", {
                 hour: "numeric",
                 minute: "2-digit",
                 hour12: true,
             }).format(new Date());
+            if (currentTime.textContent !== text) currentTime.textContent = text;
         }
 
         function applyNightMode() {
@@ -36,16 +172,85 @@
 
             const hour = new Date().getHours();
             const isNightMode = hour >= 22 || hour < 8;
+            const changed = document.body.classList.contains("night-mode") !== isNightMode;
             document.body.classList.toggle("night-mode", isNightMode);
+            if (changed) fitPageToViewport();
+        }
+
+        let feedingSyncInProgress = false;
+        // A saved offline copy (served by the service worker) starts out stale.
+        const isOfflineCopy = document.documentElement.hasAttribute("data-offline-copy");
+        let lastFeedingSyncOk = isOfflineCopy ? 0 : Date.now();
+
+        // Keep an offline copy of this page for when the server is unreachable.
+        // Browsers only allow this on secure origins, so plain http:// needs
+        // the origin allowed in chrome://flags.
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("{% url 'babybuddy:last_feeding_service_worker' %}").catch(function () {});
+        }
+
+        function feedingSnapshot(element) {
+            const copy = element.cloneNode(true);
+            copy.querySelectorAll(".time[data-feeding-start]").forEach(function (timer) {
+                timer.textContent = "";
+            });
+            copy.querySelectorAll("[style]").forEach(function (node) {
+                node.removeAttribute("style");
+            });
+            copy.querySelectorAll("input[name=csrfmiddlewaretoken]").forEach(function (input) {
+                input.removeAttribute("value");
+            });
+            return copy.innerHTML;
+        }
+
+        async function syncFeedingDetails() {
+            if (feedingSyncInProgress || document.hidden || document.body.classList.contains("modal-open")) return;
+            feedingSyncInProgress = true;
+            // AbortController does not exist in older Chrome (before 66).
+            const controller = window.AbortController ? new AbortController() : null;
+            const timeout = setTimeout(function () {
+                if (controller) controller.abort();
+            }, 15000);
+            try {
+                const updateUrl = new URL(window.location.href);
+                updateUrl.searchParams.set("background_update", "1");
+                const response = await fetch(updateUrl, {
+                    credentials: "same-origin",
+                    cache: "no-store",
+                    signal: controller ? controller.signal : undefined,
+                });
+                if (!response.ok || response.redirected) throw new Error("Feeding update unavailable");
+                const incoming = new DOMParser().parseFromString(await response.text(), "text/html");
+                const next = incoming.getElementById("feeding-details");
+                const current = document.getElementById("feeding-details");
+                if (!next || !current) throw new Error("Missing feeding details");
+                if (document.body.classList.contains("modal-open")) return;
+                if (feedingSnapshot(current) !== feedingSnapshot(next)) {
+                    current.replaceWith(next);
+                    updateElapsedFeedingTime();
+                    fitPageToViewport();
+                }
+                lastFeedingSyncOk = Date.now();
+                document.body.classList.remove("sync-stale");
+                document.querySelector(".refresh").textContent = "Live clock · Feeding updates every minute";
+            } catch (error) {
+                // After a few missed updates, flag that the timer may be out of date.
+                if (Date.now() - lastFeedingSyncOk > 150000) document.body.classList.add("sync-stale");
+                document.querySelector(".refresh").textContent = "Feeding updates unavailable · Retrying automatically";
+            } finally {
+                clearTimeout(timeout);
+                feedingSyncInProgress = false;
+            }
         }
 
         function updateViewportClass() {
-            const viewport = window.visualViewport || window;
+            const viewport = viewportSize();
             const isLandscapeTablet = viewport.width >= 900 && viewport.width > viewport.height && viewport.width <= 1600;
             document.documentElement.classList.toggle("landscape-tablet", isLandscapeTablet);
         }
 
         document.addEventListener("DOMContentLoaded", function () {
+            if (isOfflineCopy) document.body.classList.add("sync-stale");
             applyNightMode();
             updateCurrentTime();
             updateElapsedFeedingTime();
@@ -63,9 +268,24 @@
                 applyNightMode();
                 updateCurrentTime();
                 updateElapsedFeedingTime();
-            }, 60000);
+            }, 1000);
+            setInterval(syncFeedingDetails, 60000);
         });
 
+        document.addEventListener("visibilitychange", function () {
+            if (!document.hidden) {
+                applyNightMode();
+                updateCurrentTime();
+                updateElapsedFeedingTime();
+                syncFeedingDetails();
+            }
+        });
+
+        window.addEventListener("pageshow", function () {
+            updateCurrentTime();
+            updateElapsedFeedingTime();
+            syncFeedingDetails();
+        });
         window.addEventListener("resize", function () {
             updateViewportClass();
             fitPageToViewport();
@@ -121,12 +341,20 @@
                 return;
             }
 
+            page.querySelectorAll(".time, .current-time, .next-feeding-suggestion").forEach(function (element) {
+                element.style.removeProperty("font-size");
+            });
+            if (isKioskNightLayout()) {
+                fitKioskNightLayout(page);
+                return;
+            }
+
             page.style.transform = "none";
             page.style.height = "auto";
 
-            const viewport = window.visualViewport || window;
-            const availableWidth = Math.max(1, viewport.width);
-            const availableHeight = Math.max(1, viewport.height);
+            const viewport = viewportSize();
+            const availableWidth = viewport.width;
+            const availableHeight = viewport.height;
             const pageWidth = Math.max(page.scrollWidth, page.getBoundingClientRect().width);
             const pageHeight = Math.max(page.scrollHeight, page.getBoundingClientRect().height);
             const isLandscape = window.matchMedia("(orientation: landscape)").matches;
@@ -136,7 +364,8 @@
                 const timer = page.querySelector(".time");
                 const currentTime = page.querySelector(".current-time");
                 const timerSize = Math.min(230, Math.max(110, availableHeight * 0.26));
-                const currentTimeSize = Math.min(140, Math.max(64, availableHeight * 0.14));
+                const currentTimeRatio = document.body.classList.contains("night-mode") ? 0.19 : 0.14;
+                const currentTimeSize = Math.min(180, Math.max(80, availableHeight * currentTimeRatio));
                 if (timer) timer.style.setProperty("font-size", timerSize + "px", "important");
                 if (currentTime) currentTime.style.setProperty("font-size", currentTimeSize + "px", "important");
                 page.querySelectorAll(".fed-at, .feeding-meta, .amount, .status").forEach(function (element) {
@@ -1914,12 +2143,94 @@
             visibility: visible;
         }
 
+        body.night-mode .current-time {
+            font-size: clamp(48px, 12.6vw, 170px) !important;
+        }
+
         body.night-mode #page-content > .current-time {
             visibility: visible;
         }
 
         body.night-mode .card.red .time {
             color: #ff5c5c;
+        }
+        .next-feeding-suggestion {
+            margin-top: 8px;
+            font-size: clamp(14px, 2.2vw, 22px);
+            line-height: 1.3;
+            color: #b8c8d4;
+        }
+        .next-feeding-suggestion time {
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        body.night-mode .next-feeding-suggestion {
+            visibility: visible;
+            color: #89939e;
+        }
+        body.sync-stale .next-feeding-suggestion::after {
+            content: " · ⚠ not updating";
+            color: #ffb347;
+        }
+
+        /* Kiosk tablets at night: only timer, next feeding and clock, filling the screen. */
+        html.kiosk body.night-mode {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+        html.kiosk body.night-mode #page-content {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 2% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transform: none !important;
+        }
+        html.kiosk body.night-mode #page-content > * {
+            display: none !important;
+        }
+        html.kiosk body.night-mode #page-content > #feeding-details,
+        html.kiosk body.night-mode #page-content > .current-time {
+            display: block !important;
+            width: 100% !important;
+        }
+        html.kiosk body.night-mode .card {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: none !important;
+            box-shadow: none !important;
+        }
+        html.kiosk body.night-mode .card > * {
+            display: none !important;
+        }
+        html.kiosk body.night-mode .card > .time,
+        html.kiosk body.night-mode .card > .next-feeding-suggestion,
+        html.kiosk body.night-mode #page-content > .current-time {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+            line-height: 1.05 !important;
+        }
+        html.kiosk body.night-mode .card > .next-feeding-suggestion {
+            margin: 2vh 0 5vh !important;
+            line-height: 1.3 !important;
         }
         </style>
     </head>
@@ -1936,68 +2247,39 @@
                     <button class="add-button" onclick="openBottleModal()">🍼 Add Bottle Feeding</button>
                 </div>
             </div>
-            {% if show_medicine_banner %}
-                <div id="medicine-banner" class="medicine-banner" style="display: flex;">
-                    <div class="pasta-icon">🍝</div>
-                    <div class="medicine-text">
-                        {{ child.first_name|upper }}'S REFLUX MEDICINE
-                        <span class="medicine-time">{{ medicine_window_start|date:"g:i A" }} - {{ medicine_window_end|date:"g:i A" }}</span>
-                    </div>
-                    <form id="medicine-form" method="post" class="banner-actions">
-                        {% csrf_token %}
-                        <button type="submit" name="action" value="medicine" class="medicine-button">
-                            {{ child.first_name }} took the sauce!
-                        </button>
-                        <button type="submit"
-                                name="action"
-                                value="dismiss_medicine"
-                                class="banner-dismiss-button">Dismiss for tonight</button>
-                    </form>
-                </div>
-            {% endif %}
-            {% if show_bed_banner and feeding %}
-                <div id="bed-banner" class="bed-banner" style="display: flex;">
-                    <div class="bed-icon">🛏️</div>
-                    <div class="bed-text">
-                        Put down the {{ child.first_name }}!
-                        <span class="bed-note">If {{ child.first_name }} is awake, bed practice is on the menu.</span>
-                    </div>
-                    <form id="bed-form" method="post" class="banner-actions">
-                        {% csrf_token %}
-                        <input type="hidden" name="feeding_id" value="{{ feeding.id }}">
-                        <button type="submit" name="action" value="lay_down" class="bed-button">{{ child.first_name }} is tucked in!</button>
-                        <button type="submit"
-                                name="action"
-                                value="dismiss_bed"
-                                class="banner-dismiss-button">Dismiss until next feeding</button>
-                    </form>
-                </div>
-            {% endif %}
-            {% if feeding %}
-                <div class="card {{ alert_level }}{% if should_blink_alert %} blinking{% endif %}">
-                    <div class="bottle-icon">🍼</div>
-                    <div class="time" data-feeding-start="{{ feeding.start|date:"c" }}">{{ hours }}h {{ minutes }}m</div>
-                    <div class="fed-at">Fed at {{ feeding.start|date:"g:i A" }}</div>
-                    <div class="feeding-meta details">
-                        <span>{{ feeding.method|title }}, {{ feeding.type|title }}</span>
-                        {% if feeding.amount %}
-                            <span class="feeding-meta-separator">•</span>
-                            <span class="amount">{{ feeding.amount }} oz</span>
+            <div id="feeding-details" style="display: contents;">
+                {% if feeding %}
+                    <div class="card {{ alert_level }}{% if should_blink_alert %} blinking{% endif %}">
+                        <div class="bottle-icon">🍼</div>
+                        <div class="time" data-feeding-start="{{ feeding.start|date:"c" }}">{{ hours }}h {{ minutes }}m</div>
+                        <div class="fed-at">Fed at {{ feeding.start|date:"g:i A" }}</div>
+                        <div class="feeding-meta details">
+                            <span>{{ feeding.method|title }}, {{ feeding.type|title }}</span>
+                            {% if feeding.amount %}
+                                <span class="feeding-meta-separator">•</span>
+                                <span class="amount">{{ feeding.amount }} oz</span>
+                            {% endif %}
+                        </div>
+                        {% if next_feeding.estimated_at %}
+                            <div class="next-feeding-suggestion">
+                                Next feeding ~ <time datetime="{{ next_feeding.estimated_at|date:"c" }}">{{ next_feeding.estimated_at|date:"g:i A" }}</time>
+                                {% if next_feeding.amount %}· ~{{ next_feeding.amount|floatformat:"-1" }} oz{% endif %}
+                            </div>
+                        {% endif %}
+                        {% if alert_level == "yellow" %}
+                            <div class="status">FEED SOON</div>
+                        {% elif alert_level == "red" %}
+                            <div class="status">FEED NOW</div>
                         {% endif %}
                     </div>
-                    {% if alert_level == "yellow" %}
-                        <div class="status">FEED SOON</div>
-                    {% elif alert_level == "red" %}
-                        <div class="status">FEED NOW</div>
-                    {% endif %}
-                </div>
-            {% else %}
-                <div class="card">
-                    <div class="time">No feedings yet</div>
-                </div>
-            {% endif %}
+                {% else %}
+                    <div class="card">
+                        <div class="time">No feedings yet</div>
+                    </div>
+                {% endif %}
+            </div>
             <div id="current-time" class="current-time" aria-live="polite"></div>
-            <div class="refresh">🔄 Refreshes every 1 minute</div>
+            <div class="refresh">Live clock · Feeding updates every minute</div>
         </main>
         <div id="manual-entry-modal" class="modal">
             <div class="modal-content">

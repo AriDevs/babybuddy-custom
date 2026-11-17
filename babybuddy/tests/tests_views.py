@@ -157,6 +157,19 @@ class LastFeedingPageTestCase(TestCase):
         )
         cls.c.force_login(cls.user)
 
+    def test_last_feeding_manifest_is_public_fullscreen_app(self):
+        response = self.c.__class__().get("/last-feeding/manifest.webmanifest")
+        self.assertEqual(response.status_code, 200)
+        manifest = response.json()
+        self.assertEqual(manifest["display"], "fullscreen")
+        self.assertEqual(manifest["start_url"], "/last-feeding/?kiosk=1")
+
+    def test_last_feeding_service_worker_is_public_javascript(self):
+        response = self.c.__class__().get("/last-feeding/sw.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/javascript")
+        self.assertIn('"/last-feeding/"', response.content.decode())
+
     def test_last_feeding_page_adds_bottle_feeding(self):
         response = self.c.post(
             "/last-feeding/",
@@ -241,7 +254,7 @@ class LastFeedingPageTestCase(TestCase):
             "babybuddy.last_feeding_views.timezone.now", return_value=now
         ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
             response = self.c.get("/last-feeding/")
-            self.assertContains(response, "REFLUX MEDICINE")
+            self.assertNotContains(response, "REFLUX MEDICINE")
 
             self.c.post("/last-feeding/", data={"action": "medicine"})
             response = self.c.get("/last-feeding/")
@@ -263,7 +276,7 @@ class LastFeedingPageTestCase(TestCase):
             "babybuddy.last_feeding_views.timezone.now", return_value=now
         ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
             response = self.c.get("/last-feeding/")
-            self.assertContains(response, "Put down the Spaghetti!")
+            self.assertNotContains(response, "Put down the Spaghetti!")
 
             self.c.post("/last-feeding/", data={"action": "lay_down"})
             response = self.c.get("/last-feeding/")
@@ -276,7 +289,7 @@ class LastFeedingPageTestCase(TestCase):
             "babybuddy.last_feeding_views.timezone.now", return_value=now
         ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
             response = self.c.get("/last-feeding/")
-            self.assertContains(response, "REFLUX MEDICINE")
+            self.assertNotContains(response, "REFLUX MEDICINE")
 
             self.c.post("/last-feeding/", data={"action": "dismiss_medicine"})
             response = self.c.get("/last-feeding/")
@@ -301,7 +314,7 @@ class LastFeedingPageTestCase(TestCase):
             "babybuddy.last_feeding_views.timezone.now", return_value=now
         ), patch("babybuddy.last_feeding_views.timezone.localtime", return_value=now):
             response = self.c.get("/last-feeding/")
-            self.assertContains(response, "Put down the Spaghetti!")
+            self.assertNotContains(response, "Put down the Spaghetti!")
 
             self.c.post(
                 "/last-feeding/",
@@ -332,7 +345,7 @@ class LastFeedingPageTestCase(TestCase):
             self.assertNotContains(response, "Put down the Spaghetti!")
 
     def test_last_feeding_page_feed_alert_thresholds(self):
-        feeding_start = timezone.now() - timezone.timedelta(minutes=120)
+        feeding_start = timezone.now() - timezone.timedelta(minutes=180)
         models.Feeding.objects.create(
             child=self.child,
             start=feeding_start,

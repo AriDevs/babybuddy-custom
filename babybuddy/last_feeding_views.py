@@ -1,8 +1,13 @@
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from django.templatetags.static import static
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
+
+from babybuddy.feeding_estimate import next_feeding_estimate
 
 from core.models import (
     BannerDismissal,
@@ -24,6 +29,93 @@ def parse_manual_event_time(value, fallback):
         return fallback
 
     return timezone.make_aware(parsed, timezone.get_current_timezone())
+
+
+def last_feeding_manifest(request):
+    """Web app manifest so a tablet can install the page as a fullscreen app."""
+    return JsonResponse(
+        {
+            "name": "Last Feeding",
+            "short_name": "Last Feeding",
+            "start_url": reverse("babybuddy:last_feeding_page") + "?kiosk=1",
+            "scope": "/",
+            "display": "fullscreen",
+            "background_color": "#000000",
+            "theme_color": "#000000",
+            "icons": [
+                {
+                    "src": static(f"babybuddy/root/android-chrome-{size}x{size}.png"),
+                    "sizes": f"{size}x{size}",
+                    "type": "image/png",
+                }
+                for size in (192, 512)
+            ],
+        },
+        content_type="application/manifest+json",
+    )
+
+
+LAST_FEEDING_SERVICE_WORKER = """
+// Keeps the last successfully loaded Last Feeding page so the browser can show
+// it when the server cannot be reached.
+const CACHE = "last-feeding-v1";
+const PAGE_KEY = "last-feeding-page";
+
+self.addEventListener("install", function () { self.skipWaiting(); });
+self.addEventListener("activate", function (event) { event.waitUntil(self.clients.claim()); });
+
+function withTimeout(promise, ms) {
+    return new Promise(function (resolve, reject) {
+        const timer = setTimeout(function () { reject(new Error("timeout")); }, ms);
+        promise.then(
+            function (value) { clearTimeout(timer); resolve(value); },
+            function (error) { clearTimeout(timer); reject(error); }
+        );
+    });
+}
+
+async function savedPage() {
+    const cache = await caches.open(CACHE);
+    const saved = await cache.match(PAGE_KEY);
+    if (!saved) return null;
+    // Mark the copy so the page can say it is not live.
+    const html = (await saved.text()).replace("<html", '<html data-offline-copy="1"');
+    return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
+
+async function loadPage(request) {
+    try {
+        const response = await withTimeout(fetch(request), 10000);
+        if (response.status >= 500) throw new Error("server error");
+        if (response.ok && !response.redirected) {
+            const cache = await caches.open(CACHE);
+            await cache.put(PAGE_KEY, response.clone());
+        }
+        return response;
+    } catch (error) {
+        const saved = await savedPage();
+        if (saved) return saved;
+        throw error;
+    }
+}
+
+self.addEventListener("fetch", function (event) {
+    const request = event.request;
+    if (request.method !== "GET" || request.mode !== "navigate") return;
+    if (new URL(request.url).pathname !== "__PAGE_PATH__") return;
+    event.respondWith(loadPage(request));
+});
+"""
+
+
+def last_feeding_service_worker(request):
+    """Service worker that keeps an offline copy of the last feeding page."""
+    script = LAST_FEEDING_SERVICE_WORKER.replace(
+        "__PAGE_PATH__", reverse("babybuddy:last_feeding_page")
+    )
+    response = HttpResponse(script, content_type="application/javascript")
+    response["Cache-Control"] = "no-cache"
+    return response
 
 
 @login_required
@@ -131,14 +223,17 @@ def last_feeding_page(request):
             ).exists()
             show_bed_banner = not has_lay_down_event and not is_bed_dismissed
 
-        if minutes_since_feeding >= 180:
+        if minutes_since_feeding >= 210:
             alert_level = "red"
             should_blink_alert = minutes_since_feeding >= 210
-        elif minutes_since_feeding >= 120:
+        elif minutes_since_feeding >= 180:
             alert_level = "yellow"
-            should_blink_alert = minutes_since_feeding >= 150
+            should_blink_alert = minutes_since_feeding >= 210
 
     context = {
+        "next_feeding": (
+            next_feeding_estimate(feeding.child, now=now) if feeding else None
+        ),
         "feeding": feeding,
         "child": child,
         "minutes_since_feeding": minutes_since_feeding,
