@@ -47,6 +47,13 @@ rest:
         json_attributes:
           - next_feeding_amount
           - next_feedings
+      - name: Baby last solid food
+        unique_id: baby_buddy_last_solid_food
+        device_class: timestamp
+        icon: mdi:bowl-mix
+        value_template: "{{ value_json.last_solid_food_at }}"
+        json_attributes:
+          - last_solid_food_notes
       - name: Baby last medicine
         unique_id: baby_buddy_last_medicine
         device_class: timestamp

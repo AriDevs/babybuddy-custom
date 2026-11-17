@@ -18,6 +18,8 @@ from core.models import (
     Sleep,
 )
 
+SOLID_FOOD = "solid food"
+
 
 def parse_manual_event_time(value, fallback):
     if not value:
@@ -147,6 +149,17 @@ def last_feeding_page(request):
                 LayDownEvent.objects.create(child=child, time=now)
             elif action == "lay_down_manual":
                 LayDownEvent.objects.create(child=child, time=manual_event_time)
+            elif action == "solid_food":
+                # Logged as its own feeding type; the bottle timer, alerts and
+                # next-bottle estimate all ignore "solid food" entries.
+                Feeding.objects.create(
+                    child=child,
+                    start=manual_event_time,
+                    end=manual_event_time,
+                    type=SOLID_FOOD,
+                    method="parent fed",
+                    notes=request.POST.get("notes", ""),
+                )
             elif action == "dismiss_bed":
                 feeding_id = request.POST.get("feeding_id")
                 feeding = Feeding.objects.filter(id=feeding_id, child=child).first()
@@ -172,7 +185,12 @@ def last_feeding_page(request):
 
         return redirect("babybuddy:last_feeding_page")
 
-    feeding = Feeding.objects.order_by("-start").first()
+    feeding = Feeding.objects.exclude(type=SOLID_FOOD).order_by("-start").first()
+    last_solid_food = (
+        Feeding.objects.filter(child=child, type=SOLID_FOOD).order_by("-start").first()
+        if child
+        else None
+    )
 
     minutes_since_feeding = None
     hours = 0
@@ -235,6 +253,7 @@ def last_feeding_page(request):
             next_feeding_estimate(feeding.child, now=now) if feeding else None
         ),
         "feeding": feeding,
+        "last_solid_food": last_solid_food,
         "child": child,
         "minutes_since_feeding": minutes_since_feeding,
         "hours": hours,

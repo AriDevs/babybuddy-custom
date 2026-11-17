@@ -2266,6 +2266,12 @@
                                 {% if next_feeding.amount %}· ~{{ next_feeding.amount|floatformat:"-1" }} oz{% endif %}
                             </div>
                         {% endif %}
+                        {% if last_solid_food and last_solid_food.start > feeding.start %}
+                            <div class="next-feeding-suggestion">
+                                🥣 Solid food at {{ last_solid_food.start|date:"g:i A" }}
+                                {% if last_solid_food.notes %}· {{ last_solid_food.notes }}{% endif %}
+                            </div>
+                        {% endif %}
                         {% if alert_level == "yellow" %}
                             <div class="status">FEED SOON</div>
                         {% elif alert_level == "red" %}
@@ -2319,6 +2325,25 @@
                                             value="lay_down_manual"
                                             class="manual-entry-button bed">Save last lay down time</button>
                                     <div class="manual-entry-hint">Use this when bed practice happened earlier and you need to backfill it.</div>
+                                </form>
+                            </div>
+                            <div class="manual-entry-card">
+                                <div class="manual-entry-card-title">🥣 Solid food</div>
+                                <form method="post" class="manual-entry-form">
+                                    {% csrf_token %}
+                                    <input class="manual-entry-input"
+                                           type="datetime-local"
+                                           name="event_time"
+                                           value="{{ manual_event_time_value }}">
+                                    <input class="manual-entry-input"
+                                           type="text"
+                                           name="notes"
+                                           placeholder="What did they eat? (optional)">
+                                    <button type="submit"
+                                            name="action"
+                                            value="solid_food"
+                                            class="manual-entry-button">Save solid food</button>
+                                    <div class="manual-entry-hint">Doesn't change the bottle timer or next bottle estimate.</div>
                                 </form>
                             </div>
                         </div>

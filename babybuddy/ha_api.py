@@ -1,9 +1,11 @@
 """Token-authenticated JSON endpoints backing the Home Assistant dashboard.
 
 GET  /api/ha/summary/  -> what the /last-feeding and /feedings pages show
-POST /api/ha/action/   -> {"action": "bottle"|"medicine"|"lay_down", ...}
+POST /api/ha/action/   -> {"action": "bottle"|"solid_food"|"medicine"|"lay_down", ...}
                           bottle also takes "amount" and "time" ("HH:MM", default now);
                           the time may instead ride on the action: "bottle@HH:MM"
+                          solid_food takes "time"/"@HH:MM" and "notes"; it never
+                          moves the bottle timer, alerts or next-bottle estimate
 """
 
 from datetime import datetime, timedelta
@@ -20,6 +22,7 @@ from babybuddy.feeding_totals import feeding_ounce_totals
 from core.models import Child, Feeding, LayDownEvent, MedicineEvent
 
 RECENT_FEEDINGS = 25
+SOLID_FOOD = "solid food"
 
 
 def _iso(moment):
@@ -78,7 +81,8 @@ def build_summary(now=None):
     now = now or timezone.now()
     local_now = timezone.localtime(now)
     child = Child.objects.first()
-    feeding = Feeding.objects.order_by("-start").first()
+    # The bottle schedule only looks at milk/formula feedings.
+    feeding = Feeding.objects.exclude(type=SOLID_FOOD).order_by("-start").first()
 
     summary = {
         "generated_at": _iso(now),
@@ -93,6 +97,8 @@ def build_summary(now=None):
         "next_feeding_at": None,
         "next_feeding_amount": None,
         "next_feedings": [],
+        "last_solid_food_at": None,
+        "last_solid_food_notes": "",
         "last_medicine_at": None,
         "last_lay_down_at": None,
         "today_ounces": 0,
@@ -128,6 +134,12 @@ def build_summary(now=None):
     medicine = MedicineEvent.objects.filter(child=child).order_by("-time").first()
     lay_down = LayDownEvent.objects.filter(child=child).order_by("-time").first()
     summary["last_medicine_at"] = _iso(medicine.time) if medicine else None
+    solid = (
+        Feeding.objects.filter(child=child, type=SOLID_FOOD).order_by("-start").first()
+    )
+    if solid:
+        summary["last_solid_food_at"] = _iso(solid.start)
+        summary["last_solid_food_notes"] = solid.notes or ""
     summary["last_lay_down_at"] = _iso(lay_down.time) if lay_down else None
 
     totals = feeding_ounce_totals(child, now=now)
@@ -137,9 +149,13 @@ def build_summary(now=None):
         for day in totals["daily_feeding_totals"]
     ]
     day_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
-    summary["today_feedings"] = Feeding.objects.filter(
-        child=child, start__gte=day_start, start__lt=day_start + timedelta(days=1)
-    ).count()
+    summary["today_feedings"] = (
+        Feeding.objects.filter(
+            child=child, start__gte=day_start, start__lt=day_start + timedelta(days=1)
+        )
+        .exclude(type=SOLID_FOOD)
+        .count()
+    )
 
     summary["recent_feedings"] = [
         {
@@ -195,6 +211,15 @@ class ActionView(_HomeAssistantView):
                 type="formula",
                 method="bottle",
                 amount=amount,
+                notes=request.data.get("notes") or "",
+            )
+        elif action == "solid_food":
+            Feeding.objects.create(
+                child=child,
+                start=when,
+                end=when,
+                type=SOLID_FOOD,
+                method="parent fed",
                 notes=request.data.get("notes") or "",
             )
         elif action == "medicine":
